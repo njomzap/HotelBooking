@@ -4,10 +4,11 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Hotels from './pages/Hotels';
+import Hotels from './pages/Catalogue';
 
 export default function App() {
   return (
+    
     <Router>
       <Navbar />
       <Routes>
