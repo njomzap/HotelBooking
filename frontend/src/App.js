@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Hotels from './pages/Catalogue';
+import About from './pages/About';
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/hotels" element={<Hotels />} />
+        <Route path="/about" element={<About />} />
       </Routes>
     </Router>
   );
