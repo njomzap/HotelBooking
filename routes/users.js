@@ -7,7 +7,7 @@ const pool = require("../db");
 const router = express.Router();
 
 router.post("/register", async(req, res) => {
-    const {username, password } = req.body;
+    const {username, password, email, name, birthday } = req.body;
 
     try{
         const [existingUser] = await pool.query('select * from users where username = ?', [username]);
@@ -16,7 +16,7 @@ router.post("/register", async(req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password,10);
-        await pool.query('insert into users (username, password) values (?, ?)', [username, hashedPassword]);
+        await pool.query('insert into users (username, password, email, name, birthday) values (?, ?, ?, ?, ?)', [username, hashedPassword, email, name, birthday]);
 
         res.status(201).json({message: "Perdoruesi u regjistrua me sukses"});
 
