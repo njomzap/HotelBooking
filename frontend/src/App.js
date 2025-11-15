@@ -7,15 +7,15 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Hotels from './pages/Catalogue';
 import About from './pages/About';
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminRoute from './components/AdminRoute';
 
 export default function App() {
   return (
     <Router>
       <div className="flex flex-col min-h-screen">
-        {/* Navbar at the top */}
         <Navbar />
 
-        {/* Main content grows to fill space */}
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<Home />} />
@@ -23,10 +23,17 @@ export default function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/hotels" element={<Hotels />} />
             <Route path="/about" element={<About />} />
+             <Route 
+          path="/admin-dashboard" 
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          } 
+        />
           </Routes>
         </main>
 
-        {/* Footer at the bottom */}
         <Footer />
       </div>
     </Router>

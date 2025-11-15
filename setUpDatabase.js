@@ -17,14 +17,18 @@ async function setupDatabase(){
 
     await connection.query('USE booking_project');
    
-   await connection.query(`
-    CREATE TABLE IF NOT EXISTS users(
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL,
-    password VARCHAR(255) NOT NULL
-   )
- `);
- await connection.query(`
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(50) NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        email VARCHAR(100),
+        name VARCHAR(100) NOT NULL,
+        birthday DATE NOT NULL
+     )
+   `);
+
+    await connection.query(`
       CREATE TABLE IF NOT EXISTS hotels (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
