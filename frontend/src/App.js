@@ -9,6 +9,7 @@ import Hotels from './pages/Catalogue';
 import About from './pages/About';
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminRoute from './components/AdminRoute';
+import EmployeeDashboard from './pages/EmployeeDashboard/index';
 
 export default function App() {
   return (
@@ -23,14 +24,19 @@ export default function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/hotels" element={<Hotels />} />
             <Route path="/about" element={<About />} />
-             <Route 
-          path="/admin-dashboard" 
-          element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          } 
-        />
+
+            {/* Admin dashboard */}
+            <Route 
+              path="/admin-dashboard" 
+              element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              } 
+            />
+
+            {/* Employee dashboard */}
+            <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
           </Routes>
         </main>
 
