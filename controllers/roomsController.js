@@ -1,3 +1,5 @@
+const fs = require("fs");
+const path = require("path");
 const pool = require("../db");
 
 // Get all rooms
@@ -24,9 +26,8 @@ const getRoomById = async (req, res) => {
 
     const room = roomRows[0];
 
-    
     const [images] = await pool.query("SELECT image_url FROM room_images WHERE room_id = ?", [id]);
-    room.images = images.map(img => img.image_url);
+    room.images = images.map((img) => img.image_url);
 
     res.json(room);
   } catch (error) {
@@ -37,54 +38,68 @@ const getRoomById = async (req, res) => {
 
 // Create a new room
 const createRoom = async (req, res) => {
-  const { hotel_id, room_name, room_number, description, price, capacity, images } = req.body;
-
   try {
+    const { hotel_id, room_name, room_number, description, price, capacity } = req.body;
+
+    // Convert numeric fields
+    const hotelIdNum = Number(hotel_id);
+    const priceNum = Number(price);
+    const capacityNum = Number(capacity);
+
     const [result] = await pool.query(
       "INSERT INTO rooms (hotel_id, room_name, room_number, description, price, capacity) VALUES (?, ?, ?, ?, ?, ?)",
-      [hotel_id, room_name, room_number, description, price, capacity]
+      [hotelIdNum, room_name, room_number, description, priceNum, capacityNum]
     );
 
     const roomId = result.insertId;
 
-    if (images && images.length > 0) {
-      const imageValues = images.map(url => [roomId, url]);
+    // Save uploaded images
+    if (req.files && req.files.length > 0) {
+      const imageValues = req.files.map((file) => [roomId, `/uploads/${file.filename}`]);
       await pool.query("INSERT INTO room_images (room_id, image_url) VALUES ?", [imageValues]);
     }
 
     res.status(201).json({ message: "Room created successfully", roomId });
   } catch (error) {
-    console.error("Error creating room:", error);
-    res.status(500).json({ error: "Server error" });
+    console.error("CREATE ROOM ERROR:", error);
+    res.status(500).json({ error: error.message });
   }
 };
 
 // Update a room
 const updateRoom = async (req, res) => {
   const { id } = req.params;
-  const { hotel_id, room_name, room_number, description, price, capacity, images } = req.body;
-
   try {
+    const { hotel_id, room_name, room_number, description, price, capacity } = req.body;
+
+    // Convert numeric fields
+    const hotelIdNum = Number(hotel_id);
+    const priceNum = Number(price);
+    const capacityNum = Number(capacity);
+
     const [result] = await pool.query(
       "UPDATE rooms SET hotel_id = ?, room_name = ?, room_number = ?, description = ?, price = ?, capacity = ? WHERE id = ?",
-      [hotel_id, room_name, room_number, description, price, capacity, id]
+      [hotelIdNum, room_name, room_number, description, priceNum, capacityNum, id]
     );
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "Room not found" });
     }
-    if (images) {
+
+    // Handle image uploads
+    if (req.files) {
+      // Delete old images
       await pool.query("DELETE FROM room_images WHERE room_id = ?", [id]);
-      if (images.length > 0) {
-        const imageValues = images.map(url => [id, url]);
+      if (req.files.length > 0) {
+        const imageValues = req.files.map((file) => [id, `/uploads/${file.filename}`]);
         await pool.query("INSERT INTO room_images (room_id, image_url) VALUES ?", [imageValues]);
       }
     }
 
     res.json({ message: "Room updated successfully" });
   } catch (error) {
-    console.error("Error updating room:", error);
-    res.status(500).json({ error: "Server error" });
+    console.error("UPDATE ROOM ERROR:", error);
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -98,9 +113,19 @@ const deleteRoom = async (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "Room not found" });
     }
+
+    // Optionally delete images from server filesystem (optional)
+    const [images] = await pool.query("SELECT image_url FROM room_images WHERE room_id = ?", [id]);
+    images.forEach((img) => {
+      const filePath = path.join(__dirname, "..", img.image_url);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    });
+
+    await pool.query("DELETE FROM room_images WHERE room_id = ?", [id]);
+
     res.json({ message: "Room deleted successfully" });
   } catch (error) {
-    console.error("Error deleting room:", error);
+    console.error("DELETE ROOM ERROR:", error);
     res.status(500).json({ error: "Server error" });
   }
 };

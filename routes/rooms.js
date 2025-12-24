@@ -1,15 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const roomsController = require('../controllers/roomsController.js');
-console.log('roomsController:', roomsController);
+const upload = require("../middlewares/uploads");
 
+// GET routes
 router.get('/', roomsController.getAllRooms);
 router.get('/:id', roomsController.getRoomById);
-router.post('/', roomsController.createRoom);
-router.put('/:id', roomsController.updateRoom);
-router.delete('/:id', roomsController.deleteRoom);
 
-console.log("Rooms route loaded");
+// POST & PUT routes with multer
+router.post("/", upload.array("images"), roomsController.createRoom);
+router.put("/:id", upload.array("images"), roomsController.updateRoom);
 
+// DELETE route
+router.delete("/:id", roomsController.deleteRoom);
 
 module.exports = router;

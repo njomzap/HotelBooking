@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Rooms from "./rooms";
 import Bookings from "./bookings";
 import Profile from "./profile";
-import Navbar from "../../components/Navbar"; 
+import Navbar from "../../components/Navbar";
 
 const EmployeeDashboard = () => {
   const [activeTab, setActiveTab] = useState("rooms");
@@ -20,45 +20,48 @@ const EmployeeDashboard = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-100">
-      <Navbar />
-      <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-6">Employee Dashboard</h1>
+  const menuButton = (tab, label) => (
+    <button
+      onClick={() => setActiveTab(tab)}
+      className={`w-full text-left px-4 py-3 rounded-lg transition font-medium
+        ${
+          activeTab === tab
+            ? "bg-orange-500 text-white"
+            : "text-gray-300 hover:bg-gray-700"
+        }`}
+    >
+      {label}
+    </button>
+  );
 
-        <div className="flex space-x-4 mb-6">
-          <button
-            onClick={() => setActiveTab("rooms")}
-            className={`px-4 py-2 rounded ${
-              activeTab === "rooms" ? "bg-blue-500 text-white" : "bg-gray-200"
-            }`}
-          >
-            Rooms
-          </button>
-          <button
-            onClick={() => setActiveTab("bookings")}
-            className={`px-4 py-2 rounded ${
-              activeTab === "bookings"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200"
-            }`}
-          >
-            Bookings
-          </button>
-          <button
-            onClick={() => setActiveTab("profile")}
-            className={`px-4 py-2 rounded ${
-              activeTab === "profile"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200"
-            }`}
-          >
-            Profile
-          </button>
-        </div>
+  return (
+    <div className="min-h-screen bg-gray-100 font-sans">
+      <Navbar />
+
+      <div className="flex pt-20">
+        
+        <aside className="w-64 bg-gray-800 min-h-screen p-6">
+          <h2 className="text-2xl font-bold text-orange-500 mb-8">
+            Employee Panel
+          </h2>
+
+          <nav className="space-y-2">
+            {menuButton("rooms", "Rooms")}
+            {menuButton("bookings", "Bookings")}
+            {menuButton("profile", "Profile")}
+          </nav>
+        </aside>
 
         
-        <div className="bg-white p-6 rounded shadow">{renderTab()}</div>
+        <main className="flex-1 p-8">
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <h1 className="text-3xl font-bold text-gray-800 mb-6">
+              {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+            </h1>
+
+            {renderTab()}
+          </div>
+        </main>
       </div>
     </div>
   );
