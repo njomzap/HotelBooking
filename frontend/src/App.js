@@ -7,9 +7,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Hotels from './pages/Catalogue';
 import About from './pages/About';
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminRoute from './components/AdminRoute';
+import AdminDashboard from "./pages/AdminDashboard/Index";
 import EmployeeDashboard from './pages/EmployeeDashboard/index';
+import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
   return (
@@ -25,18 +25,23 @@ export default function App() {
             <Route path="/hotels" element={<Hotels />} />
             <Route path="/about" element={<About />} />
 
-            {/* Admin dashboard */}
             <Route 
               path="/admin-dashboard" 
               element={
-                <AdminRoute>
+                <ProtectedRoute allowedRoles={["admin"]}>
                   <AdminDashboard />
-                </AdminRoute>
+                </ProtectedRoute>
               } 
             />
 
-            {/* Employee dashboard */}
-            <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
+            <Route
+              path="/employee-dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "employee"]}>
+                  <EmployeeDashboard />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </main>
 
@@ -45,3 +50,4 @@ export default function App() {
     </Router>
   );
 }
+

@@ -1,5 +1,5 @@
 import React from 'react';
 
 export default function Profile() {
-  return <div>Employee Profile content here</div>;
+  return <div>Admin Profile content here</div>;
 }

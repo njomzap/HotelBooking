@@ -11,7 +11,6 @@ export default function Register() {
     birthday: '',
     password: '',
     confirmPassword: '',
-    isAdmin: false, // checkbox for admin
   });
 
   const handleChange = (e) => {
@@ -27,7 +26,8 @@ export default function Register() {
     }
 
     try {
-      const roleValue = formData.isAdmin ? 1 : 0;
+      // Always assign 'user' role for new registrations
+      const roleValue = 'user';
 
       const res = await axios.post('http://localhost:5000/api/users/register', {
         username: formData.username,
@@ -127,20 +127,6 @@ export default function Register() {
             />
           </div>
 
-          
-          <div className="flex items-center gap-2 mt-2">
-            <input
-              type="checkbox"
-              name="isAdmin"
-              checked={formData.isAdmin}
-              onChange={(e) =>
-                setFormData({ ...formData, isAdmin: e.target.checked })
-              }
-              className="w-4 h-4"
-            />
-            <label className="text-gray-700">Is Admin?</label>
-          </div>
-
           <button
             type="submit"
             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg"
@@ -159,3 +145,4 @@ export default function Register() {
     </div>
   );
 }
+

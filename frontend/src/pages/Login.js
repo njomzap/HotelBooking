@@ -22,13 +22,17 @@ export default function Login() {
         password: formData.password
       });
 
+      // Save token and role as string in localStorage
       localStorage.setItem('token', res.data.token);
-      localStorage.setItem('role', res.data.role === 1 ? 'admin' : 'client');
+      localStorage.setItem('role', res.data.role); // admin, employee, or user
 
       alert(res.data.message);
 
-      if (res.data.role === 1) {
+      // Redirect based on role
+      if (res.data.role === 'admin') {
         navigate('/admin-dashboard'); 
+      } else if (res.data.role === 'employee') {
+        navigate('/employee-dashboard'); 
       } else {
         navigate('/'); 
       }
@@ -88,3 +92,4 @@ export default function Login() {
     </div>
   );
 }
+

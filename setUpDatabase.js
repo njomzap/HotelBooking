@@ -24,7 +24,8 @@ async function setupDatabase(){
         password VARCHAR(255) NOT NULL,
         email VARCHAR(100),
         name VARCHAR(100) NOT NULL,
-        birthday DATE NOT NULL
+        birthday DATE NOT NULL,
+        role ENUM('admin','employee','user') DEFAULT 'user'
      )
    `);
 
