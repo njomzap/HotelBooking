@@ -1,15 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const hotelsController = require('../controllers/hotelsController');
+const hotelController = require('../controllers/hotelsController');
 
-console.log('hotelsController:', hotelsController);
+router.get('/', hotelController.getHotels);
 
-router.get("/", hotelsController.getAllHotels);
-router.get("/:id", hotelsController.getHotelById);
-router.post("/", hotelsController.createHotel);
-router.put("/:id", hotelsController.updateHotel);
-router.delete("/:id",hotelsController.deleteHotel);
 
-console.log("Hotels route loaded");
+router.get('/:id', hotelController.getHotelById);
+
+
+router.post('/', hotelController.createHotel);
+
+router.put('/:id', hotelController.updateHotel);
+
+router.delete('/:id', hotelController.deleteHotel);
 
 module.exports = router;
