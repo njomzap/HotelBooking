@@ -18,17 +18,16 @@ const Rooms = () => {
     images: [],
   });
 
-  // Get token from localStorage
+
   const token = localStorage.getItem("token");
 
-  // Axios instance with Authorization header
   const axiosInstance = axios.create({
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
 
-  // Fetch all rooms
+
   const fetchRooms = async () => {
     try {
       const res = await axios.get(API_URL);
@@ -63,7 +62,6 @@ const Rooms = () => {
     });
   };
 
-  // Create or update room
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -72,7 +70,7 @@ const Rooms = () => {
       if (key !== "images") data.append(key, formData[key]);
     });
 
-    // Append all images
+  
     for (let i = 0; i < formData.images.length; i++) {
       data.append("images", formData.images[i]);
     }
@@ -96,7 +94,7 @@ const Rooms = () => {
     }
   };
 
-  // Start editing a room
+ 
   const handleEdit = (room) => {
     setEditingId(room.id);
     setFormData({
@@ -110,7 +108,6 @@ const Rooms = () => {
     });
   };
 
-  // Delete a room
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this room?")) return;
 
@@ -125,7 +122,7 @@ const Rooms = () => {
 
   return (
     <div className="space-y-10">
-      {/* FORM */}
+      {}
       <form onSubmit={handleSubmit} className="bg-gray-50 p-6 rounded-xl space-y-4">
         <h2 className="text-xl font-semibold">{editingId ? "Edit Room" : "Add Room"}</h2>
 
@@ -183,7 +180,7 @@ const Rooms = () => {
         </button>
       </form>
 
-      {/* ROOM GRID */}
+      {}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {rooms.length > 0 ? (
           rooms.map((room) => (

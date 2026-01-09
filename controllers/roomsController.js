@@ -15,7 +15,6 @@ const getAllRooms = async (req, res) => {
       room.images = images.map(img => img.image_url);
     }
 
-    console.log("Rooms fetched:", rooms); // 👈 Add this
     res.json(rooms);
   } catch (error) {
     console.error("Error fetching rooms:", error);
@@ -24,14 +23,11 @@ const getAllRooms = async (req, res) => {
 };
 
 
-
-
 const getRoomById = async (req, res) => {
   const { id } = req.params;
 
   try {
     const [roomRows] = await pool.query("SELECT * FROM rooms WHERE id = ?", [id]);
-
     if (roomRows.length === 0) {
       return res.status(404).json({ error: "Room not found" });
     }
@@ -39,7 +35,7 @@ const getRoomById = async (req, res) => {
     const room = roomRows[0];
 
     const [images] = await pool.query("SELECT image_url FROM room_images WHERE room_id = ?", [id]);
-    room.images = images.map((img) => img.image_url);
+    room.images = images.map(img => img.image_url);
 
     res.json(room);
   } catch (error) {
@@ -57,6 +53,7 @@ const createRoom = async (req, res) => {
     const priceNum = Number(price);
     const capacityNum = Number(capacity);
 
+  
     const [result] = await pool.query(
       "INSERT INTO rooms (hotel_id, room_name, room_number, description, price, capacity) VALUES (?, ?, ?, ?, ?, ?)",
       [hotelIdNum, room_name, room_number, description, priceNum, capacityNum]
@@ -64,10 +61,14 @@ const createRoom = async (req, res) => {
 
     const roomId = result.insertId;
 
-    
+  
     if (req.files && req.files.length > 0) {
-      const imageValues = req.files.map((file) => [roomId, `/uploads/${file.filename}`]);
-      await pool.query("INSERT INTO room_images (room_id, image_url) VALUES ?", [imageValues]);
+      const placeholders = req.files.map(() => "(?, ?)").join(", ");
+      const values = req.files.flatMap(file => [roomId, `/uploads/${file.filename}`]);
+      await pool.query(
+        `INSERT INTO room_images (room_id, image_url) VALUES ${placeholders}`,
+        values
+      );
     }
 
     res.status(201).json({ message: "Room created successfully", roomId });
@@ -80,10 +81,10 @@ const createRoom = async (req, res) => {
 
 const updateRoom = async (req, res) => {
   const { id } = req.params;
+
   try {
     const { hotel_id, room_name, room_number, description, price, capacity } = req.body;
 
-    
     const hotelIdNum = Number(hotel_id);
     const priceNum = Number(price);
     const capacityNum = Number(capacity);
@@ -97,9 +98,9 @@ const updateRoom = async (req, res) => {
       return res.status(404).json({ error: "Room not found" });
     }
 
-
+   
     if (req.files && req.files.length > 0) {
-      
+     
       const [oldImages] = await pool.query("SELECT image_url FROM room_images WHERE room_id = ?", [id]);
       oldImages.forEach(img => {
         const filePath = path.join(__dirname, "..", img.image_url);
@@ -108,9 +109,10 @@ const updateRoom = async (req, res) => {
 
       await pool.query("DELETE FROM room_images WHERE room_id = ?", [id]);
 
-      
-      const imageValues = req.files.map(file => [id, `/uploads/${file.filename}`]);
-      await pool.query("INSERT INTO room_images (room_id, image_url) VALUES ?", [imageValues]);
+     
+      const placeholders = req.files.map(() => "(?, ?)").join(", ");
+      const values = req.files.flatMap(file => [id, `/uploads/${file.filename}`]);
+      await pool.query(`INSERT INTO room_images (room_id, image_url) VALUES ${placeholders}`, values);
     }
 
     res.json({ message: "Room updated successfully" });
@@ -121,20 +123,18 @@ const updateRoom = async (req, res) => {
 };
 
 
-
 const deleteRoom = async (req, res) => {
   const { id } = req.params;
 
   try {
+   
     const [result] = await pool.query("DELETE FROM rooms WHERE id = ?", [id]);
-
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "Room not found" });
     }
 
-    
     const [images] = await pool.query("SELECT image_url FROM room_images WHERE room_id = ?", [id]);
-    images.forEach((img) => {
+    images.forEach(img => {
       const filePath = path.join(__dirname, "..", img.image_url);
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     });
