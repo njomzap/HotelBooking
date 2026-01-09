@@ -9,6 +9,7 @@ import Hotels from './pages/Catalogue';
 import About from './pages/About';
 import AdminDashboard from "./pages/AdminDashboard/Index";
 import EmployeeDashboard from './pages/EmployeeDashboard/index';
+import RoomDetail from './pages/RoomDetails';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
@@ -42,6 +43,9 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
+            
+            <Route path="/rooms/:id" element={<RoomDetail />} />
           </Routes>
         </main>
 
@@ -50,4 +54,3 @@ export default function App() {
     </Router>
   );
 }
-
