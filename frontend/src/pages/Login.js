@@ -22,9 +22,9 @@ export default function Login() {
         password: formData.password
       });
 
-      // Save token and role as string in localStorage
+      // 🔑 Save token and role in localStorage for all future requests
       localStorage.setItem('token', res.data.token);
-      localStorage.setItem('role', res.data.role); // admin, employee, or user
+      localStorage.setItem('role', res.data.role);
 
       alert(res.data.message);
 
@@ -92,4 +92,3 @@ export default function Login() {
     </div>
   );
 }
-

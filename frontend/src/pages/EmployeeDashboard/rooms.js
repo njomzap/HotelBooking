@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import RoomCard from "../../components/RoomCard";
 
 const API_URL = "http://localhost:5000/api/rooms";
 
@@ -17,25 +18,23 @@ const Rooms = () => {
     images: [],
   });
 
-  // Normalize backend room object to frontend-friendly keys
-  const normalizeRoom = (room) => ({
-    id: room.id,
-    hotel_id: room.hotel_id ?? room.hotelId,
-    room_name: room.room_name ?? room.name,
-    room_number: room.room_number ?? room.number,
-    description: room.description ?? room.desc,
-    price: room.price,
-    capacity: room.capacity,
-    images: room.images ?? [],
+  // Get token from localStorage
+  const token = localStorage.getItem("token");
+
+  // Axios instance with Authorization header
+  const axiosInstance = axios.create({
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   });
 
   // Fetch all rooms
   const fetchRooms = async () => {
     try {
       const res = await axios.get(API_URL);
-      setRooms(res.data.map(normalizeRoom));
+      setRooms(res.data);
     } catch (error) {
-      console.error("Error fetching rooms", error);
+      console.error("Fetch rooms error:", error.response?.data || error.message);
     }
   };
 
@@ -43,7 +42,6 @@ const Rooms = () => {
     fetchRooms();
   }, []);
 
-  // Handle form input change
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -52,7 +50,6 @@ const Rooms = () => {
     setFormData({ ...formData, images: e.target.files });
   };
 
-  // Reset form
   const resetForm = () => {
     setEditingId(null);
     setFormData({
@@ -71,46 +68,31 @@ const Rooms = () => {
     e.preventDefault();
 
     const data = new FormData();
-    data.append("hotel_id", formData.hotel_id);
-    data.append("room_name", formData.room_name);
-    data.append("room_number", formData.room_number);
-    data.append("description", formData.description);
-    data.append("price", Number(formData.price));
-    data.append("capacity", Number(formData.capacity));
+    Object.keys(formData).forEach((key) => {
+      if (key !== "images") data.append(key, formData[key]);
+    });
 
-    if (formData.images && formData.images.length > 0) {
-      for (let i = 0; i < formData.images.length; i++) {
-        data.append("images", formData.images[i]);
-      }
+    // Append all images
+    for (let i = 0; i < formData.images.length; i++) {
+      data.append("images", formData.images[i]);
     }
 
     try {
-      let response;
-
       if (editingId) {
-        // Update existing room
-        response = await axios.put(`${API_URL}/${editingId}`, data, {
+        await axiosInstance.put(`${API_URL}/${editingId}`, data, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-
-        setRooms(rooms.map((room) =>
-          room.id === editingId ? normalizeRoom(response.data) : room
-        ));
-        setEditingId(null);
       } else {
-        // Create new room
-        response = await axios.post(API_URL, data, {
+        await axiosInstance.post(API_URL, data, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-
-        setRooms((prevRooms) => [...prevRooms, normalizeRoom(response.data)]);
       }
 
       resetForm();
+      fetchRooms();
     } catch (error) {
-      console.error("FULL ERROR:", error);
-      console.error("BACKEND RESPONSE:", error.response?.data);
-      alert(JSON.stringify(error.response?.data || error.message));
+      console.error("Submit room error:", error.response?.data || error.message);
+      alert(error.response?.data?.error || "Action failed");
     }
   };
 
@@ -124,31 +106,28 @@ const Rooms = () => {
       description: room.description,
       price: room.price,
       capacity: room.capacity,
-      images: [], // reset images, user can re-upload
+      images: [],
     });
   };
 
   // Delete a room
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this room?")) return;
+
     try {
-      await axios.delete(`${API_URL}/${id}`);
+      await axiosInstance.delete(`${API_URL}/${id}`);
       setRooms(rooms.filter((room) => room.id !== id));
     } catch (error) {
-      console.error("Error deleting room", error);
+      console.error("Delete error:", error.response?.data || error.message);
+      alert(error.response?.data?.error || "Not authorized");
     }
   };
 
   return (
     <div className="space-y-10">
       {/* FORM */}
-      <form
-        onSubmit={handleSubmit}
-        className="bg-gray-50 p-6 rounded-lg border space-y-4"
-      >
-        <h2 className="text-xl font-semibold">
-          {editingId ? "Edit Room" : "Add Room"}
-        </h2>
+      <form onSubmit={handleSubmit} className="bg-gray-50 p-6 rounded-xl space-y-4">
+        <h2 className="text-xl font-semibold">{editingId ? "Edit Room" : "Add Room"}</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <input
@@ -188,13 +167,7 @@ const Rooms = () => {
             onChange={handleChange}
             className="border rounded px-3 py-2"
           />
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={handleFileChange}
-            className="border rounded px-3 py-2"
-          />
+          <input type="file" multiple accept="image/*" onChange={handleFileChange} />
         </div>
 
         <textarea
@@ -205,71 +178,25 @@ const Rooms = () => {
           className="w-full border rounded px-3 py-2"
         />
 
-        <div className="flex gap-4">
-          <button className="bg-orange-500 text-white px-6 py-2 rounded hover:bg-orange-600 transition">
-            {editingId ? "Update" : "Create"}
-          </button>
-          {editingId && (
-            <button
-              type="button"
-              onClick={resetForm}
-              className="px-6 py-2 border rounded hover:bg-gray-100 transition"
-            >
-              Cancel
-            </button>
-          )}
-        </div>
+        <button className="bg-orange-500 text-white px-6 py-2 rounded">
+          {editingId ? "Update" : "Create"}
+        </button>
       </form>
 
-      {/* TABLE */}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-left">
-          <thead className="bg-gray-200">
-            <tr>
-              <th className="p-3">Room</th>
-              <th className="p-3">Number</th>
-              <th className="p-3">Price</th>
-              <th className="p-3">Capacity</th>
-              <th className="p-3">Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {rooms.length > 0 ? (
-              rooms.map((room, idx) => (
-                <tr
-                  key={room.id}
-                  className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                >
-                  <td className="p-3">{room.room_name}</td>
-                  <td className="p-3">{room.room_number}</td>
-                  <td className="p-3">${room.price}</td>
-                  <td className="p-3">{room.capacity}</td>
-                  <td className="p-3 space-x-2">
-                    <button
-                      onClick={() => handleEdit(room)}
-                      className="bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600 transition"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(room.id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="5" className="text-center p-6 text-gray-500">
-                  No rooms found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      {/* ROOM GRID */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {rooms.length > 0 ? (
+          rooms.map((room) => (
+            <RoomCard
+              key={room.id}
+              room={room}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          ))
+        ) : (
+          <p className="text-center col-span-full text-gray-500">No rooms found</p>
+        )}
       </div>
     </div>
   );

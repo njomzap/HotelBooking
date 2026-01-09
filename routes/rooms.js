@@ -1,5 +1,5 @@
 const express = require('express');
-const router = express.Router();
+const router = express.Router(); // ✅ router must be defined BEFORE using it
 const roomsController = require('../controllers/roomsController.js');
 const upload = require('../middlewares/uploads');
 
@@ -9,8 +9,11 @@ const {
   requireAnyRole
 } = require('../middlewares/auth');
 
+
 router.get('/', roomsController.getAllRooms);
+
 router.get('/:id', roomsController.getRoomById);
+
 
 router.post(
   '/',
@@ -20,6 +23,7 @@ router.post(
   roomsController.createRoom
 );
 
+
 router.put(
   '/:id',
   authMiddleware,
@@ -28,10 +32,11 @@ router.put(
   roomsController.updateRoom
 );
 
+
 router.delete(
   '/:id',
   authMiddleware,
-  requireRole('admin'),
+  requireAnyRole(['admin', 'employee']),
   roomsController.deleteRoom
 );
 
