@@ -3,12 +3,27 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const API_URL = "http://localhost:5000/api/rooms";
+const BOOKINGS_API = "http://localhost:5000/api/bookings";
 
 const RoomDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [room, setRoom] = useState(null);
+  const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [user, setUser] = useState(null);
 
+  // Load logged-in user from localStorage
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  // Fetch room details
   useEffect(() => {
     const fetchRoom = async () => {
       try {
@@ -21,6 +36,41 @@ const RoomDetail = () => {
     };
     fetchRoom();
   }, [id]);
+
+  const handleBooking = async () => {
+    if (!user || !user.id) {
+      setMessage("You must be logged in to book a room");
+      return;
+    }
+
+    if (!checkIn || !checkOut) {
+      setMessage("Please select check-in and check-out dates");
+      return;
+    }
+
+    setLoading(true);
+    setMessage("");
+
+    try {
+      const res = await axios.post(BOOKINGS_API, {
+        user_id: user.id,
+        room_id: room.id,
+        check_in: checkIn,
+        check_out: checkOut,
+      });
+
+      setMessage(`Booking successful! ID: ${res.data.id}`);
+    } catch (err) {
+      console.error(err);
+      if (err.response && err.response.data?.message) {
+        setMessage(`Error: ${err.response.data.message}`);
+      } else {
+        setMessage("Booking failed. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!room) return <div>Loading...</div>;
 
@@ -50,7 +100,9 @@ const RoomDetail = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-6">
           <div>
-            <h2 className="text-orange-500 text-lg font-semibold">{room.hotel_name || "Hotel"}</h2>
+            <h2 className="text-orange-500 text-lg font-semibold">
+              {room.hotel_name || "Hotel"}
+            </h2>
             <h1 className="text-4xl font-bold mt-1">{room.room_name}</h1>
           </div>
 
@@ -76,7 +128,10 @@ const RoomDetail = () => {
               <h3 className="text-lg font-semibold mb-2">Amenities</h3>
               <ul className="flex flex-wrap gap-4 text-gray-600">
                 {room.amenities.map((amenity, index) => (
-                  <li key={index} className="bg-gray-100 px-3 py-1 rounded shadow-sm">
+                  <li
+                    key={index}
+                    className="bg-gray-100 px-3 py-1 rounded shadow-sm"
+                  >
                     {amenity}
                   </li>
                 ))}
@@ -91,6 +146,8 @@ const RoomDetail = () => {
             <input
               type="date"
               className="w-full border rounded px-3 py-2"
+              value={checkIn}
+              onChange={(e) => setCheckIn(e.target.value)}
             />
           </div>
 
@@ -99,12 +156,20 @@ const RoomDetail = () => {
             <input
               type="date"
               className="w-full border rounded px-3 py-2"
+              value={checkOut}
+              onChange={(e) => setCheckOut(e.target.value)}
             />
           </div>
 
-          <button className="w-full bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">
-            Book Now
+          <button
+            onClick={handleBooking}
+            disabled={loading}
+            className="w-full bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
+          >
+            {loading ? "Booking..." : "Book Now"}
           </button>
+
+          {message && <p className="mt-2 text-gray-700">{message}</p>}
         </div>
       </div>
     </div>

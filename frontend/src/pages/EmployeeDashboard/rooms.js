@@ -18,7 +18,6 @@ const Rooms = () => {
     images: [],
   });
 
-
   const token = localStorage.getItem("token");
 
   const axiosInstance = axios.create({
@@ -27,7 +26,7 @@ const Rooms = () => {
     },
   });
 
-
+  // Fetch rooms from backend
   const fetchRooms = async () => {
     try {
       const res = await axios.get(API_URL);
@@ -41,6 +40,7 @@ const Rooms = () => {
     fetchRooms();
   }, []);
 
+  // Form handlers
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -70,7 +70,6 @@ const Rooms = () => {
       if (key !== "images") data.append(key, formData[key]);
     });
 
-  
     for (let i = 0; i < formData.images.length; i++) {
       data.append("images", formData.images[i]);
     }
@@ -94,7 +93,7 @@ const Rooms = () => {
     }
   };
 
- 
+  // Edit and delete handlers
   const handleEdit = (room) => {
     setEditingId(room.id);
     setFormData({
@@ -122,7 +121,7 @@ const Rooms = () => {
 
   return (
     <div className="space-y-10">
-      {}
+      {/* Room form (admin only can edit/create) */}
       <form onSubmit={handleSubmit} className="bg-gray-50 p-6 rounded-xl space-y-4">
         <h2 className="text-xl font-semibold">{editingId ? "Edit Room" : "Add Room"}</h2>
 
@@ -180,7 +179,7 @@ const Rooms = () => {
         </button>
       </form>
 
-      {}
+      {/* Rooms display */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {rooms.length > 0 ? (
           rooms.map((room) => (
@@ -189,6 +188,7 @@ const Rooms = () => {
               room={room}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              isAdmin={true} // or false depending on your auth
             />
           ))
         ) : (
