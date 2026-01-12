@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 const BOOKINGS_API = "http://localhost:5000/api/bookings";
+const EXTRA_REQUESTS_API = "http://localhost:5000/api/extra-requests";
 
 const ManageBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -12,7 +13,6 @@ const ManageBookings = () => {
 
   const token = localStorage.getItem("token");
 
-  
   const getAxiosHeaders = () => ({
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -22,7 +22,18 @@ const ManageBookings = () => {
     setError("");
     try {
       const res = await axios.get(BOOKINGS_API, getAxiosHeaders());
-      setBookings(res.data);
+      const bookingsWithRequests = await Promise.all(
+        res.data.map(async (booking) => {
+          try {
+            const reqRes = await axios.get(`${EXTRA_REQUESTS_API}/booking/${booking.id}`);
+            return { ...booking, extraRequests: reqRes.data };
+          } catch (err) {
+            console.error(`Failed to fetch extra requests for booking ${booking.id}`, err);
+            return { ...booking, extraRequests: [] };
+          }
+        })
+      );
+      setBookings(bookingsWithRequests);
     } catch (err) {
       console.error("FETCH BOOKINGS ERROR:", err.response?.status, err.response?.data);
       setError("Failed to fetch bookings");
@@ -56,7 +67,6 @@ const ManageBookings = () => {
 
     try {
       await axios.delete(`${BOOKINGS_API}/${bookingId}`, getAxiosHeaders());
-     
       fetchBookings();
     } catch (err) {
       console.error("DELETE BOOKING ERROR:", err.response?.status, err.response?.data);
@@ -86,6 +96,7 @@ const ManageBookings = () => {
                 <th className="px-4 py-2 border">Check-in</th>
                 <th className="px-4 py-2 border">Check-out</th>
                 <th className="px-4 py-2 border">Status</th>
+                <th className="px-4 py-2 border">Extra Requests</th>
                 <th className="px-4 py-2 border">Actions</th>
               </tr>
             </thead>
@@ -109,6 +120,17 @@ const ManageBookings = () => {
                     </td>
                     <td className={`px-4 py-2 border font-semibold ${statusClass}`}>
                       {booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
+                    </td>
+                    <td className="px-4 py-2 border">
+                      {booking.extraRequests && booking.extraRequests.length > 0 ? (
+                        <ul className="list-disc pl-5">
+                          {booking.extraRequests.map((req) => (
+                            <li key={req.id}>{req.request_text}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span className="text-gray-400 italic">None</span>
+                      )}
                     </td>
                     <td className="px-4 py-2 border flex gap-2">
                       <select

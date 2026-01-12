@@ -4,18 +4,22 @@ import axios from "axios";
 
 const API_URL = "http://localhost:5000/api/rooms";
 const BOOKINGS_API = "http://localhost:5000/api/bookings";
+const EXTRA_REQUESTS_API = "http://localhost:5000/api/extra-requests";
 
 const RoomDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [room, setRoom] = useState(null);
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
+  const [extraRequest, setExtraRequest] = useState("");
+  const [createdBookingId, setCreatedBookingId] = useState(null);
+
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [user, setUser] = useState(null);
 
- 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -23,7 +27,6 @@ const RoomDetail = () => {
     }
   }, []);
 
- 
   useEffect(() => {
     const fetchRoom = async () => {
       try {
@@ -37,53 +40,66 @@ const RoomDetail = () => {
     fetchRoom();
   }, [id]);
 
- const handleBooking = async () => {
-  if (!room || !room.id) {
-    setMessage("Room information is still loading. Please wait.");
-    return;
-  }
+  const handleBooking = async () => {
+    if (!room || !room.id) {
+      setMessage("Room information is still loading. Please wait.");
+      return;
+    }
 
-  const token = localStorage.getItem("token");
-  if (!token) {
-    setMessage("You must be logged in to book a room");
-    return;
-  }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setMessage("You must be logged in to book a room");
+      return;
+    }
 
-  if (!checkIn || !checkOut) {
-    setMessage("Please select check-in and check-out dates");
-    return;
-  }
+    if (!checkIn || !checkOut) {
+      setMessage("Please select check-in and check-out dates");
+      return;
+    }
 
-  setLoading(true);
-  setMessage("");
+    setLoading(true);
+    setMessage("");
 
-  try {
-    const res = await axios.post(
-      BOOKINGS_API,
-      {
-        room_id: room.id,
-        check_in: checkIn,
-        check_out: checkOut,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
+    try {
+      // 1️⃣ Create booking
+      const bookingRes = await axios.post(
+        BOOKINGS_API,
+        {
+          room_id: room.id,
+          check_in: checkIn,
+          check_out: checkOut,
         },
-      }
-    );
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    setMessage(`Booking successful! ID: ${res.data.id}`);
-  } catch (err) {
-    console.error("AXIOS ERROR:", err);
-    setMessage(
-      err.response?.data?.message ||
-      err.response?.data?.error ||
-      "Booking failed. Please try again."
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+      const bookingId = bookingRes.data.id;
+      setCreatedBookingId(bookingId);
+
+      // 2️⃣ Create extra request (optional)
+      if (extraRequest.trim()) {
+        await axios.post(EXTRA_REQUESTS_API, {
+          booking_id: bookingId,
+          request_text: extraRequest,
+        });
+      }
+
+      setMessage("Booking successful! Extra request saved.");
+      setExtraRequest("");
+    } catch (err) {
+      console.error("AXIOS ERROR:", err);
+      setMessage(
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          "Booking failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!room) return <div>Loading...</div>;
 
@@ -120,37 +136,15 @@ const RoomDetail = () => {
           </div>
 
           <div className="flex flex-wrap gap-6 text-gray-700 mt-4">
-            <div className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded shadow-sm">
-              🛏 <span>{room.capacity} Guests</span>
-            </div>
-            <div className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded shadow-sm">
-              #️⃣ Room {room.room_number}
-            </div>
-            <div className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded shadow-sm">
-              💵 ${room.price} / night
-            </div>
+            <div className="bg-gray-100 px-3 py-1 rounded">🛏 {room.capacity} Guests</div>
+            <div className="bg-gray-100 px-3 py-1 rounded">#️⃣ Room {room.room_number}</div>
+            <div className="bg-gray-100 px-3 py-1 rounded">💵 ${room.price} / night</div>
           </div>
 
-          <div className="mt-4 text-gray-700 space-y-2">
+          <div>
             <h3 className="text-lg font-semibold">Description</h3>
             <p>{room.description}</p>
           </div>
-
-          {room.amenities && room.amenities.length > 0 && (
-            <div className="mt-4">
-              <h3 className="text-lg font-semibold mb-2">Amenities</h3>
-              <ul className="flex flex-wrap gap-4 text-gray-600">
-                {room.amenities.map((amenity, index) => (
-                  <li
-                    key={index}
-                    className="bg-gray-100 px-3 py-1 rounded shadow-sm"
-                  >
-                    {amenity}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
 
         <div className="space-y-4 border rounded p-4 shadow">
@@ -174,15 +168,26 @@ const RoomDetail = () => {
             />
           </div>
 
-          <button
-  type="button"
-  onClick={handleBooking}
-  disabled={loading || !room}
-  className="w-full bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 disabled:opacity-50"
->
-  {loading ? "Booking..." : "Book Now"}
-</button>
+          {/* EXTRA REQUEST INPUT */}
+          <div>
+            <label className="block text-gray-600 mb-1">Extra Requests (optional)</label>
+            <textarea
+              className="w-full border rounded px-3 py-2"
+              rows="3"
+              placeholder="e.g. Late checkout, extra pillows"
+              value={extraRequest}
+              onChange={(e) => setExtraRequest(e.target.value)}
+            />
+          </div>
 
+          <button
+            type="button"
+            onClick={handleBooking}
+            disabled={loading || !room}
+            className="w-full bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 disabled:opacity-50"
+          >
+            {loading ? "Booking..." : "Book Now"}
+          </button>
 
           {message && <p className="mt-2 text-gray-700">{message}</p>}
         </div>
