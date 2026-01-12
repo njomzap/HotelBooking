@@ -1,27 +1,27 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const bookingsController = require('../controllers/bookingsController');
+const bookingsController = require("../controllers/bookingsController");
+const { authMiddleware } = require("../middlewares/auth");
 
-console.log('Bookings routes loaded');
-
-router.post('/test', (req, res) => {
-  res.json({ message: 'Bookings POST works' });
-});
-
-router.post('/', bookingsController.createBooking);
-
-router.get('/user/:userId', bookingsController.getBookingsByUser);
-
-router.get('/room/:roomId', bookingsController.getBookingsByRoom);
-
-router.get('/:id', bookingsController.getBookingById);
-
-router.get('/', bookingsController.getAllBookings);
+console.log("Bookings routes loaded");
 
 
-router.put('/:id', bookingsController.updateBooking);
+router.post("/", authMiddleware, bookingsController.createBooking);
 
 
-router.delete('/:id', bookingsController.deleteBooking);
+router.get("/", authMiddleware, bookingsController.getAllBookings);
+
+
+router.get("/user/:userId", authMiddleware, bookingsController.getBookingsByUser);
+
+
+router.get("/room/:roomId", authMiddleware, bookingsController.getBookingsByRoom);
+
+
+router.get("/:id", authMiddleware, bookingsController.getBookingById);
+
+router.put("/:id", authMiddleware, bookingsController.updateBooking);
+
+router.delete("/:id", authMiddleware, bookingsController.deleteBooking);
 
 module.exports = router;

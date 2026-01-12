@@ -3,44 +3,78 @@ import axios from "axios";
 
 const BOOKINGS_API = "http://localhost:5000/api/bookings";
 
-const EmployeeBookings = () => {
+const ManageBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [updatingId, setUpdatingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
-  const token = localStorage.getItem("token"); // assuming you store JWT here
+  const token = localStorage.getItem("token");
 
-  const axiosInstance = axios.create({
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+  
+  const getAxiosHeaders = () => ({
+    headers: { Authorization: `Bearer ${token}` },
   });
 
-  useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        const res = await axiosInstance.get(BOOKINGS_API);
-        setBookings(res.data);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to fetch bookings");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchBookings = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await axios.get(BOOKINGS_API, getAxiosHeaders());
+      setBookings(res.data);
+    } catch (err) {
+      console.error("FETCH BOOKINGS ERROR:", err.response?.status, err.response?.data);
+      setError("Failed to fetch bookings");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchBookings();
   }, []);
+
+  const handleStatusChange = async (bookingId, newStatus) => {
+    setUpdatingId(bookingId);
+    try {
+      await axios.put(`${BOOKINGS_API}/${bookingId}`, { status: newStatus }, getAxiosHeaders());
+      setBookings((prev) =>
+        prev.map((b) => (b.id === bookingId ? { ...b, status: newStatus } : b))
+      );
+    } catch (err) {
+      console.error("STATUS UPDATE ERROR:", err.response?.status, err.response?.data);
+      alert("Failed to update status");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleDelete = async (bookingId) => {
+    if (!window.confirm("Are you sure you want to delete this booking?")) return;
+    setDeletingId(bookingId);
+
+    try {
+      await axios.delete(`${BOOKINGS_API}/${bookingId}`, getAxiosHeaders());
+     
+      fetchBookings();
+    } catch (err) {
+      console.error("DELETE BOOKING ERROR:", err.response?.status, err.response?.data);
+      alert("Failed to delete booking");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   if (loading) return <div>Loading bookings...</div>;
   if (error) return <div className="text-red-500">{error}</div>;
 
   return (
-    <div className="max-w-6xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Bookings</h1>
+    <div className="max-w-7xl mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-6">Manage Bookings</h1>
 
       {bookings.length === 0 ? (
-        <p>No bookings found.</p>
+        <p className="text-gray-500 italic">No bookings found.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full border border-gray-300">
@@ -51,18 +85,54 @@ const EmployeeBookings = () => {
                 <th className="px-4 py-2 border">Room</th>
                 <th className="px-4 py-2 border">Check-in</th>
                 <th className="px-4 py-2 border">Check-out</th>
+                <th className="px-4 py-2 border">Status</th>
+                <th className="px-4 py-2 border">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {bookings.map((booking) => (
-                <tr key={booking.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 border">{booking.id}</td>
-                  <td className="px-4 py-2 border">{booking.user_name || booking.user_id}</td>
-                  <td className="px-4 py-2 border">{booking.room_name || booking.room_id}</td>
-                  <td className="px-4 py-2 border">{new Date(booking.check_in).toLocaleDateString()}</td>
-                  <td className="px-4 py-2 border">{new Date(booking.check_out).toLocaleDateString()}</td>
-                </tr>
-              ))}
+              {bookings.map((booking) => {
+                let statusClass = "text-gray-700";
+                if (booking.status === "pending") statusClass = "text-yellow-600";
+                if (booking.status === "cancelled") statusClass = "text-red-600";
+                if (booking.status === "completed") statusClass = "text-green-600";
+
+                return (
+                  <tr key={booking.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-2 border">{booking.id}</td>
+                    <td className="px-4 py-2 border">{booking.user_name || booking.user_id}</td>
+                    <td className="px-4 py-2 border">{booking.room_name || booking.room_id}</td>
+                    <td className="px-4 py-2 border">
+                      {new Date(booking.check_in).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-2 border">
+                      {new Date(booking.check_out).toLocaleDateString()}
+                    </td>
+                    <td className={`px-4 py-2 border font-semibold ${statusClass}`}>
+                      {booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
+                    </td>
+                    <td className="px-4 py-2 border flex gap-2">
+                      <select
+                        value={booking.status}
+                        onChange={(e) => handleStatusChange(booking.id, e.target.value)}
+                        disabled={updatingId === booking.id}
+                        className="border rounded px-2 py-1"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="completed">Completed</option>
+                      </select>
+                      <button
+                        onClick={() => handleDelete(booking.id)}
+                        disabled={deletingId === booking.id}
+                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 disabled:opacity-50"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -71,5 +141,4 @@ const EmployeeBookings = () => {
   );
 };
 
-export default EmployeeBookings;
-
+export default ManageBookings;

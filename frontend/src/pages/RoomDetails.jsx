@@ -15,7 +15,7 @@ const RoomDetail = () => {
   const [message, setMessage] = useState("");
   const [user, setUser] = useState(null);
 
-  // Load logged-in user from localStorage
+ 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -23,7 +23,7 @@ const RoomDetail = () => {
     }
   }, []);
 
-  // Fetch room details
+ 
   useEffect(() => {
     const fetchRoom = async () => {
       try {
@@ -37,40 +37,53 @@ const RoomDetail = () => {
     fetchRoom();
   }, [id]);
 
-  const handleBooking = async () => {
-    if (!user || !user.id) {
-      setMessage("You must be logged in to book a room");
-      return;
-    }
+ const handleBooking = async () => {
+  if (!room || !room.id) {
+    setMessage("Room information is still loading. Please wait.");
+    return;
+  }
 
-    if (!checkIn || !checkOut) {
-      setMessage("Please select check-in and check-out dates");
-      return;
-    }
+  const token = localStorage.getItem("token");
+  if (!token) {
+    setMessage("You must be logged in to book a room");
+    return;
+  }
 
-    setLoading(true);
-    setMessage("");
+  if (!checkIn || !checkOut) {
+    setMessage("Please select check-in and check-out dates");
+    return;
+  }
 
-    try {
-      const res = await axios.post(BOOKINGS_API, {
-        user_id: user.id,
+  setLoading(true);
+  setMessage("");
+
+  try {
+    const res = await axios.post(
+      BOOKINGS_API,
+      {
         room_id: room.id,
         check_in: checkIn,
         check_out: checkOut,
-      });
-
-      setMessage(`Booking successful! ID: ${res.data.id}`);
-    } catch (err) {
-      console.error(err);
-      if (err.response && err.response.data?.message) {
-        setMessage(`Error: ${err.response.data.message}`);
-      } else {
-        setMessage("Booking failed. Please try again.");
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }
-    } finally {
-      setLoading(false);
-    }
-  };
+    );
+
+    setMessage(`Booking successful! ID: ${res.data.id}`);
+  } catch (err) {
+    console.error("AXIOS ERROR:", err);
+    setMessage(
+      err.response?.data?.message ||
+      err.response?.data?.error ||
+      "Booking failed. Please try again."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (!room) return <div>Loading...</div>;
 
@@ -162,12 +175,14 @@ const RoomDetail = () => {
           </div>
 
           <button
-            onClick={handleBooking}
-            disabled={loading}
-            className="w-full bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
-          >
-            {loading ? "Booking..." : "Book Now"}
-          </button>
+  type="button"
+  onClick={handleBooking}
+  disabled={loading || !room}
+  className="w-full bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 disabled:opacity-50"
+>
+  {loading ? "Booking..." : "Book Now"}
+</button>
+
 
           {message && <p className="mt-2 text-gray-700">{message}</p>}
         </div>

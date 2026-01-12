@@ -41,72 +41,91 @@ exports.getBookingById = async (req, res) => {
 };
 
 exports.createBooking = async (req, res) => {
-  const { user_id, room_id, check_in, check_out } = req.body;
-
-  if (!user_id || !room_id || !check_in || !check_out) {
-    return res.status(400).json({ message: 'All fields are required' });
-  }
-
   try {
-    const [[user]] = await db.query('SELECT id FROM users WHERE id = ?', [user_id]);
-    if (!user) return res.status(400).json({ message: 'User does not exist' });
+    const userId = req.user.id;
+    const { room_id, check_in, check_out, status } = req.body;
 
-    const [[room]] = await db.query('SELECT id FROM rooms WHERE id = ?', [room_id]);
-    if (!room) return res.status(400).json({ message: 'Room does not exist' });
+    if (!room_id || !check_in || !check_out) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const validStatuses = ["pending", "confirmed", "cancelled", "completed"];
+    const bookingStatus = validStatuses.includes(status) ? status : "confirmed";
 
     const [result] = await db.query(
-      'INSERT INTO bookings (user_id, room_id, check_in, check_out) VALUES (?, ?, ?, ?)',
-      [user_id, room_id, check_in, check_out]
+      `INSERT INTO bookings (user_id, room_id, check_in, check_out, status)
+       VALUES (?, ?, ?, ?, ?)`,
+      [userId, room_id, check_in, check_out, bookingStatus]
     );
 
     res.status(201).json({
-      message: 'Booking created successfully',
-      bookingId: result.insertId
+      id: result.insertId,
+      user_id: userId,
+      room_id,
+      check_in,
+      check_out,
+      status: bookingStatus
     });
-
   } catch (err) {
-    console.error('CREATE BOOKING ERROR:', err);
-    res.status(500).json({ message: 'Failed to create booking' });
+    console.error("BOOKING ERROR:", err);
+    res.status(500).json({ message: "Booking failed" });
   }
 };
 
-exports.updateBooking = async (req, res) => {
-  const { id } = req.params;
-  const { check_in, check_out } = req.body;
 
+
+exports.updateBooking = async (req, res) => {
   try {
+    const bookingId = req.params.id;
+    const { status } = req.body;
+
     const [result] = await db.query(
-      'UPDATE bookings SET check_in = ?, check_out = ? WHERE id = ?',
-      [check_in, check_out, id]
+      "UPDATE bookings SET status = ? WHERE id = ?",
+      [status, bookingId]
     );
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Booking not found' });
+      return res.status(404).json({ message: "Booking not found" });
     }
 
-    res.json({ message: 'Booking updated successfully' });
+   
+    const [updated] = await db.query(
+      `SELECT b.*, u.name AS user_name, r.room_name 
+       FROM bookings b 
+       JOIN users u ON b.user_id = u.id 
+       JOIN rooms r ON b.room_id = r.id
+       WHERE b.id = ?`,
+      [bookingId]
+    );
+
+    res.json(updated[0]); 
   } catch (err) {
-    console.error('UPDATE BOOKING ERROR:', err);
-    res.status(500).json({ message: 'Failed to update booking' });
+    console.error("UPDATE BOOKING ERROR:", err);
+    res.status(500).json({ message: "Failed to update booking" });
   }
 };
+
 
 exports.deleteBooking = async (req, res) => {
-  const { id } = req.params;
-
   try {
-    const [result] = await db.query('DELETE FROM bookings WHERE id = ?', [id]);
+    const bookingId = req.params.id;
+
+    const [result] = await db.query(
+      "DELETE FROM bookings WHERE id = ?",
+      [bookingId]
+    );
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Booking not found' });
+      return res.status(404).json({ message: "Booking not found" });
     }
 
-    res.json({ message: 'Booking deleted successfully' });
+    res.json({ message: "Booking deleted successfully" });
   } catch (err) {
-    console.error('DELETE BOOKING ERROR:', err);
-    res.status(500).json({ message: 'Failed to delete booking' });
+    console.error("DELETE BOOKING ERROR:", err);
+    res.status(500).json({ message: "Failed to delete booking" });
   }
 };
+
 
 exports.getBookingsByUser = async (req, res) => {
   const { userId } = req.params;
