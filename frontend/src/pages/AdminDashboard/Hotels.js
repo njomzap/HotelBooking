@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import HotelCard from "../../components/HotelCard"; // importi i HotelCard
 
 const API_URL = "http://localhost:5000/api/hotels";
 
@@ -27,7 +28,7 @@ const Hotels = () => {
     },
   });
 
-  
+ 
   const fetchHotels = async () => {
     try {
       const res = await axios.get(API_URL);
@@ -64,17 +65,14 @@ const Hotels = () => {
     });
   };
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       if (editingId) {
         await axiosInstance.put(`${API_URL}/${editingId}`, formData);
       } else {
         await axiosInstance.post(API_URL, formData);
       }
-
       resetForm();
       fetchHotels();
     } catch (error) {
@@ -83,7 +81,6 @@ const Hotels = () => {
     }
   };
 
- 
   const handleEdit = (hotel) => {
     setEditingId(hotel.id);
     setFormData({
@@ -99,7 +96,7 @@ const Hotels = () => {
     });
   };
 
-  
+ 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this hotel?")) return;
 
@@ -114,6 +111,7 @@ const Hotels = () => {
 
   return (
     <div className="space-y-10">
+
       {}
       <form
         onSubmit={handleSubmit}
@@ -152,40 +150,17 @@ const Hotels = () => {
         </button>
       </form>
 
-{}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {hotels.length > 0 ? (
           hotels.map((hotel) => (
-            <div
+            <HotelCard
               key={hotel.id}
-              className="border rounded-xl p-5 bg-white shadow-sm space-y-2"
-            >
-              <h3 className="text-lg font-semibold">{hotel.name}</h3>
-              <p className="text-sm text-gray-600">
-                {hotel.city}, {hotel.country}
-              </p>
-
-              <div className="text-sm flex gap-4">
-                <span>🏊 {hotel.has_pool ? "Yes" : "No"}</span>
-                <span>🏋 {hotel.has_gym ? "Yes" : "No"}</span>
-                <span>🚗 {hotel.parking ? "Yes" : "No"}</span>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => handleEdit(hotel)}
-                  className="px-4 py-1 bg-blue-500 text-white rounded"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(hotel.id)}
-                  className="px-4 py-1 bg-red-500 text-white rounded"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
+              hotel={hotel}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              isAdmin={true} 
+            />
           ))
         ) : (
           <p className="text-center col-span-full text-gray-500">

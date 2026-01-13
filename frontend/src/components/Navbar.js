@@ -9,7 +9,7 @@ export default function Navbar() {
     <nav className="w-full fixed top-0 left-0 bg-white shadow-sm z-50">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
-        {/* Logo */}
+        {}
         <div className="flex items-center gap-2">
           <div className="p-2 rounded-lg">
             <img 
@@ -21,7 +21,7 @@ export default function Navbar() {
           <h1 className="text-xl font-semibold text-gray-800">BookYourStay</h1>
         </div>
 
-        {/* Desktop Menu */}
+        {}
         <ul className="hidden md:flex items-center gap-10 text-gray-700 text-md">
           <li className="hover:text-orange-500 cursor-pointer transition">
             <Link to="/">Home</Link>
@@ -34,7 +34,7 @@ export default function Navbar() {
           </li>
         </ul>
 
-        {/* Right-side buttons (Desktop) */}
+        {}
         <div className="hidden md:flex items-center gap-4">
           <Link 
             to="/login" 
@@ -50,13 +50,13 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* Mobile Menu Button */}
+        {}
         <button className="md:hidden ml-2" onClick={() => setOpen(!open)}>
           {open ? <X /> : <Menu />}
         </button>
       </div>
 
-      {/* Mobile Menu */}
+      {}
       {open && (
         <ul className="md:hidden bg-white shadow-md px-6 pb-4 flex flex-col gap-4 text-gray-700 text-md">
           <li className="hover:text-orange-500 cursor-pointer transition">
@@ -69,7 +69,6 @@ export default function Navbar() {
             <Link to="/about" onClick={() => setOpen(false)}>About</Link>
           </li>
           <li className="flex flex-col gap-2 mt-2">
-           
             <Link 
               to="/login" 
               onClick={() => setOpen(false)}
@@ -84,7 +83,6 @@ export default function Navbar() {
             >
               Register
             </Link>
-            
           </li>
         </ul>
       )}
