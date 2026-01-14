@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import HotelCard from "../../components/HotelCard"; // importi i HotelCard
+import HotelCard from "../../components/HotelCard";
 
 const API_URL = "http://localhost:5000/api/hotels";
 
 const Hotels = () => {
   const [hotels, setHotels] = useState([]);
   const [editingId, setEditingId] = useState(null);
+  const [images, setImages] = useState([]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -28,13 +29,12 @@ const Hotels = () => {
     },
   });
 
- 
   const fetchHotels = async () => {
     try {
       const res = await axios.get(API_URL);
       setHotels(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
-      console.error("Fetch hotels error:", error.response?.data || error.message);
+      console.error("Fetch hotels error:", error);
     }
   };
 
@@ -50,8 +50,13 @@ const Hotels = () => {
     });
   };
 
+  const handleImageChange = (e) => {
+    setImages(e.target.files);
+  };
+
   const resetForm = () => {
     setEditingId(null);
+    setImages([]);
     setFormData({
       name: "",
       address: "",
@@ -67,17 +72,33 @@ const Hotels = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const data = new FormData();
+
+    Object.entries(formData).forEach(([key, value]) => {
+      data.append(key, value);
+    });
+
+    for (let i = 0; i < images.length; i++) {
+      data.append("images", images[i]);
+    }
+
     try {
       if (editingId) {
-        await axiosInstance.put(`${API_URL}/${editingId}`, formData);
+        await axiosInstance.put(`${API_URL}/${editingId}`, data, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
       } else {
-        await axiosInstance.post(API_URL, formData);
+        await axiosInstance.post(API_URL, data, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
       }
+
       resetForm();
       fetchHotels();
     } catch (error) {
       console.error("Submit hotel error:", error.response?.data || error.message);
-      alert(error.response?.data?.error || "Action failed");
+      alert("Hotel action failed");
     }
   };
 
@@ -96,23 +117,19 @@ const Hotels = () => {
     });
   };
 
- 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this hotel?")) return;
 
     try {
       await axiosInstance.delete(`${API_URL}/${id}`);
-      setHotels(hotels.filter((h) => h.id !== id));
+      fetchHotels();
     } catch (error) {
-      console.error("Delete hotel error:", error.response?.data || error.message);
-      alert(error.response?.data?.error || "Not authorized");
+      alert("Delete failed");
     }
   };
 
   return (
     <div className="space-y-10">
-
-      {}
       <form
         onSubmit={handleSubmit}
         className="bg-gray-50 p-6 rounded-xl space-y-4"
@@ -130,19 +147,18 @@ const Hotels = () => {
           <input name="country" placeholder="Country" value={formData.country} onChange={handleChange} className="border rounded px-3 py-2" />
         </div>
 
+        <input
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={handleImageChange}
+          className="border p-2 rounded"
+        />
+
         <div className="flex gap-6">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" name="has_pool" checked={formData.has_pool} onChange={handleChange} />
-            Pool
-          </label>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" name="has_gym" checked={formData.has_gym} onChange={handleChange} />
-            Gym
-          </label>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" name="parking" checked={formData.parking} onChange={handleChange} />
-            Parking
-          </label>
+          <label><input type="checkbox" name="has_pool" checked={formData.has_pool} onChange={handleChange} /> Pool</label>
+          <label><input type="checkbox" name="has_gym" checked={formData.has_gym} onChange={handleChange} /> Gym</label>
+          <label><input type="checkbox" name="parking" checked={formData.parking} onChange={handleChange} /> Parking</label>
         </div>
 
         <button className="bg-orange-500 text-white px-6 py-2 rounded">
@@ -150,23 +166,16 @@ const Hotels = () => {
         </button>
       </form>
 
-      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {hotels.length > 0 ? (
-          hotels.map((hotel) => (
-            <HotelCard
-              key={hotel.id}
-              hotel={hotel}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              isAdmin={true} 
-            />
-          ))
-        ) : (
-          <p className="text-center col-span-full text-gray-500">
-            No hotels found
-          </p>
-        )}
+        {hotels.map((hotel) => (
+          <HotelCard
+            key={hotel.id}
+            hotel={hotel}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            isAdmin
+          />
+        ))}
       </div>
     </div>
   );
