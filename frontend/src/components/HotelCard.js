@@ -11,7 +11,7 @@ const HotelCard = ({ hotel, onEdit, onDelete, isAdmin = false }) => {
       onClick={handleCardClick}
       className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer overflow-hidden flex flex-col"
     >
-      {}
+  
       <div className="relative h-56 w-full bg-gray-100 overflow-hidden">
         {hotel.images?.length > 0 ? (
           <img
@@ -26,7 +26,7 @@ const HotelCard = ({ hotel, onEdit, onDelete, isAdmin = false }) => {
         )}
       </div>
 
-      {}
+  
       <div className="p-5 flex flex-col flex-grow justify-between">
         <div className="space-y-2">
           <h3 className="text-xl font-semibold text-gray-800">
@@ -42,35 +42,28 @@ const HotelCard = ({ hotel, onEdit, onDelete, isAdmin = false }) => {
           )}
         </div>
 
-        {}
-        <div className="mt-4 flex items-center justify-between">
-          <span className="font-bold text-orange-500 text-lg">
-            {hotel.price_per_night ? `$${hotel.price_per_night}/night` : "—"}
-          </span>
-
-          {isAdmin && (
-            <div className="flex gap-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit?.(hotel);
-                }}
-                className="px-3 py-1 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
-              >
-                Edit
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete?.(hotel.id);
-                }}
-                className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-              >
-                Delete
-              </button>
-            </div>
-          )}
-        </div>
+        {isAdmin && (
+          <div className="mt-4 flex gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit?.(hotel);
+              }}
+              className="px-3 py-1 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
+            >
+              Edit
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete?.(hotel.id);
+              }}
+              className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+            >
+              Delete
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

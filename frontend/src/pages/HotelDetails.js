@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 
-import RoomCard from "../components/RoomCard"; 
+import RoomCard from "../components/RoomCard";
+
+const isLoggedIn = true;
 
 const HotelDetails = () => {
   const { id } = useParams();
@@ -11,12 +13,17 @@ const HotelDetails = () => {
   const [loading, setLoading] = useState(true);
   const [roomsLoading, setRoomsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchHotel();
-    fetchRooms();
-  }, [id]);
+  const [lostItems, setLostItems] = useState([]);
+  const [newItem, setNewItem] = useState({
+    item_name: "",
+    description: "",
+    date_found: "",
+    location: ""
+  });
+  const [lfLoading, setLfLoading] = useState(true);
 
-  const fetchHotel = async () => {
+  
+  const fetchHotel = useCallback(async () => {
     try {
       const res = await axios.get(`http://localhost:5000/api/hotels/${id}`);
       setHotel(res.data);
@@ -25,9 +32,9 @@ const HotelDetails = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const fetchRooms = async () => {
+  const fetchRooms = useCallback(async () => {
     try {
       const res = await axios.get(`http://localhost:5000/api/rooms?hotel_id=${id}`);
       setRooms(res.data);
@@ -36,8 +43,46 @@ const HotelDetails = () => {
     } finally {
       setRoomsLoading(false);
     }
+  }, [id]);
+
+  const fetchLostItems = useCallback(async () => {
+    try {
+      const res = await axios.get(`http://localhost:5000/api/lostfound?hotel_id=${id}`);
+      setLostItems(res.data);
+    } catch (err) {
+      console.error("Error fetching lost & found items:", err);
+    } finally {
+      setLfLoading(false);
+    }
+  }, [id]);
+
+  
+  useEffect(() => {
+    fetchHotel();
+    fetchRooms();
+    fetchLostItems();
+  }, [fetchHotel, fetchRooms, fetchLostItems]);
+
+
+  const handleInputChange = (e) => {
+    setNewItem({ ...newItem, [e.target.name]: e.target.value });
   };
 
+  const handleAddItem = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post(`http://localhost:5000/api/lostfound`, {
+        ...newItem,
+        hotel_id: id,
+      });
+      setLostItems([...lostItems, res.data]);
+      setNewItem({ item_name: "", description: "", date_found: "", location: "" });
+    } catch (err) {
+      console.error("Error adding lost & found item:", err);
+    }
+  };
+
+  
   if (loading)
     return (
       <p className="p-6 text-center text-gray-500 font-medium">Loading hotel details...</p>
@@ -49,9 +94,9 @@ const HotelDetails = () => {
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-8">
-      {}
+      
       <div>
-        <h1 className="text-4xl font-bold text-gray-800 mb-2">{hotel.hotel_name}</h1>
+        <h1 className="text-4xl font-bold text-orange-600 mb-2">{hotel.hotel_name}</h1>
         <p className="text-gray-500 mb-6">{hotel.city}</p>
 
         {hotel.images?.length ? (
@@ -70,9 +115,6 @@ const HotelDetails = () => {
           <p className="text-gray-700">
             <span className="font-semibold">Address:</span> {hotel.address}
           </p>
-          <p className="text-gray-700">
-            <span className="font-semibold">Price:</span> ${hotel.price_per_night} / night
-          </p>
           {hotel.description && (
             <p className="text-gray-700">
               <span className="font-semibold">Description:</span> {hotel.description}
@@ -86,9 +128,9 @@ const HotelDetails = () => {
         </div>
       </div>
 
-      {}
+   
       <div>
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Rooms</h2>
+        <h2 className="text-2xl font-semibold text-orange-600 mb-4">Rooms</h2>
         {roomsLoading ? (
           <p className="text-gray-500">Loading rooms...</p>
         ) : rooms.length === 0 ? (
@@ -100,6 +142,61 @@ const HotelDetails = () => {
             ))}
           </div>
         )}
+      </div>
+
+   
+      <div>
+        <h2 className="text-2xl font-semibold text-orange-600 mb-4">Lost & Found</h2>
+
+        {isLoggedIn && (
+          <form
+            onSubmit={handleAddItem}
+            className="mb-6 space-y-4 bg-orange-50 p-5 rounded-2xl shadow-md border border-orange-200"
+          >
+            <input
+              type="text"
+              name="item_name"
+              placeholder="Item Name"
+              value={newItem.item_name}
+              onChange={handleInputChange}
+              required
+              className="w-full border border-orange-300 rounded px-3 py-2 focus:ring-2 focus:ring-orange-400 focus:outline-none"
+            />
+            <textarea
+              name="description"
+              placeholder="Description"
+              value={newItem.description}
+              onChange={handleInputChange}
+              required
+              className="w-full border border-orange-300 rounded px-3 py-2 focus:ring-2 focus:ring-orange-400 focus:outline-none"
+            />
+            <input
+              type="date"
+              name="date_found"
+              value={newItem.date_found}
+              onChange={handleInputChange}
+              required
+              className="w-full border border-orange-300 rounded px-3 py-2 focus:ring-2 focus:ring-orange-400 focus:outline-none"
+            />
+            <input
+              type="text"
+              name="location"
+              placeholder="Location found"
+              value={newItem.location}
+              onChange={handleInputChange}
+              required
+              className="w-full border border-orange-300 rounded px-3 py-2 focus:ring-2 focus:ring-orange-400 focus:outline-none"
+            />
+            <button
+              type="submit"
+              className="bg-orange-600 text-white px-5 py-2 rounded-lg hover:bg-orange-700 transition"
+            >
+              Add Item
+            </button>
+          </form>
+        )}
+
+       
       </div>
     </div>
   );

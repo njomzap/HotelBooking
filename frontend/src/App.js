@@ -19,6 +19,7 @@ import EmployeeDashboard from './pages/EmployeeDashboard/index';
 import EmployeeHotels from "./pages/EmployeeDashboard/hotels";
 
 import ProtectedRoute from './components/ProtectedRoute';
+import LostFound from "./pages/LostFound";
 
 export default function App() {
   return (
@@ -69,6 +70,17 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
+            {/* Lost & Found for Employees */}
+<Route
+  path="/employee/lostfound"
+  element={
+    <ProtectedRoute allowedRoles={["admin", "employee"]}>
+      <LostFound />
+    </ProtectedRoute>
+  }
+/>
+
           </Routes>
         </main>
 

@@ -21,14 +21,14 @@ const roomsRoutes = require('./routes/rooms');
 const hotelsRoutes = require('./routes/hotels');
 const bookingsRoutes = require('./routes/bookings');
 const extraRequestsRoutes = require('./routes/extraRequests');
-
+const lostFoundRoutes = require('./routes/lostFound');
 
 app.use('/api/users', userRoutes);
 app.use('/api/rooms', roomsRoutes);
 app.use('/api/hotels', hotelsRoutes);
 app.use('/api/bookings/', bookingsRoutes);
 app.use("/api/extra-requests", extraRequestsRoutes);
-
+app.use('/api/lostfound', lostFoundRoutes);
 
 app.get('/', (req, res) => {
   res.send('API is running');

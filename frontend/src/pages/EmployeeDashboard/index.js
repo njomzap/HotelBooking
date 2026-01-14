@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Rooms from "./rooms";
 import Bookings from "./bookings";
 import Profile from "./profile";
+import LostFound from "../LostFound"; // Import Lost & Found
 import Navbar from "../../components/Navbar";
 
 const EmployeeDashboard = () => {
@@ -15,6 +16,8 @@ const EmployeeDashboard = () => {
         return <Bookings />;
       case "profile":
         return <Profile />;
+      case "lostfound":
+        return <LostFound />; // Shfaq Lost & Found kur klikojmë tab
       default:
         return <Rooms />;
     }
@@ -39,7 +42,7 @@ const EmployeeDashboard = () => {
       <Navbar />
 
       <div className="flex pt-20">
-        
+        {/* Sidebar menu */}
         <aside className="w-64 bg-gray-800 min-h-screen p-6">
           <h2 className="text-2xl font-bold text-orange-500 mb-8">
             Employee Panel
@@ -49,14 +52,17 @@ const EmployeeDashboard = () => {
             {menuButton("rooms", "Rooms")}
             {menuButton("bookings", "Bookings")}
             {menuButton("profile", "Profile")}
+            {menuButton("lostfound", "Lost & Found")} {/* Shto Lost & Found */}
           </nav>
         </aside>
 
-        
+        {/* Main content */}
         <main className="flex-1 p-8">
           <div className="bg-white rounded-xl shadow-md p-6">
             <h1 className="text-3xl font-bold text-gray-800 mb-6">
-              {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+              {activeTab === "lostfound"
+                ? "Lost & Found"
+                : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
             </h1>
 
             {renderTab()}
