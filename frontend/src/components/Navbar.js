@@ -1,91 +1,55 @@
-import { useState } from "react";
-import { Menu, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
-export default function Navbar() {
-  const [open, setOpen] = useState(false);
+export default function Navbar({ setRole }) {
+  const navigate = useNavigate();
+  const [role, setLocalRole] = useState(null);
+
+  useEffect(() => {
+    const savedRole = localStorage.getItem("role");
+    setLocalRole(savedRole);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    setLocalRole(null);
+    if (setRole) setRole(null);
+    navigate("/login");
+  };
+
+  const showLogout = role === "admin" || role === "employee";
 
   return (
-    <nav className="w-full fixed top-0 left-0 bg-white shadow-sm z-50">
+    <nav className="w-full bg-white shadow-md fixed top-0 left-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-
-        {}
+        {/* Logo */}
         <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg">
-            <img 
-              src="/images/logo.png" 
-              alt="StayEase Logo" 
-              className="w-8 h-8 object-cover rounded-lg"
-            />
-          </div>
+          <img src="/images/logo.png" alt="StayEase Logo" className="w-8 h-8 rounded-lg"/>
           <h1 className="text-xl font-semibold text-gray-800">BookYourStay</h1>
         </div>
 
-        {}
         <ul className="hidden md:flex items-center gap-10 text-gray-700 text-md">
-          <li className="hover:text-orange-500 cursor-pointer transition">
-            <Link to="/">Home</Link>
-          </li>
-          <li className="hover:text-orange-500 cursor-pointer transition">
-            <Link to="/catalogue">Hotels</Link>
-          </li>
-          <li className="hover:text-orange-500 cursor-pointer transition">
-            <Link to="/about">About</Link>
-          </li>
+          {!showLogout && (
+            <>
+              <li><Link to="/">Home</Link></li>
+              <li><Link to="/catalogue">Hotels</Link></li>
+              <li><Link to="/about">About</Link></li>
+            </>
+          )}
         </ul>
 
-        {}
         <div className="hidden md:flex items-center gap-4">
-          <Link 
-            to="/login" 
-            className="px-4 py-2 border border-orange-500 text-orange-500 rounded-2xl hover:bg-orange-500 hover:text-white transition"
-          >
-            Login
-          </Link>
-          <Link 
-            to="/register" 
-            className="px-4 py-2 bg-orange-500 text-white rounded-2xl hover:bg-orange-600 transition"
-          >
-            Register
-          </Link>
+          {showLogout ? (
+            <button onClick={handleLogout} className="px-4 py-2 bg-orange-500 text-white rounded-2xl hover:bg-orange-600 transition">Logout</button>
+          ) : (
+            <>
+              <Link to="/login" className="px-4 py-2 border border-orange-500 text-orange-500 rounded-2xl hover:bg-orange-500 hover:text-white transition">Login</Link>
+              <Link to="/register" className="px-4 py-2 bg-orange-500 text-white rounded-2xl hover:bg-orange-600 transition">Register</Link>
+            </>
+          )}
         </div>
-
-        {}
-        <button className="md:hidden ml-2" onClick={() => setOpen(!open)}>
-          {open ? <X /> : <Menu />}
-        </button>
       </div>
-
-      {}
-      {open && (
-        <ul className="md:hidden bg-white shadow-md px-6 pb-4 flex flex-col gap-4 text-gray-700 text-md">
-          <li className="hover:text-orange-500 cursor-pointer transition">
-            <Link to="/" onClick={() => setOpen(false)}>Home</Link>
-          </li>
-          <li className="hover:text-orange-500 cursor-pointer transition">
-            <Link to="/catalogue" onClick={() => setOpen(false)}>Hotels</Link>
-          </li>
-          <li className="hover:text-orange-500 cursor-pointer transition">
-            <Link to="/about" onClick={() => setOpen(false)}>About</Link>
-          </li>
-          <li className="flex flex-col gap-2 mt-2">
-            <Link 
-              to="/login" 
-              onClick={() => setOpen(false)}
-              className="px-4 py-2 border border-orange-500 text-orange-500 rounded-2xl hover:bg-orange-500 hover:text-white transition text-center"
-            >
-              Login
-            </Link>
-            <Link 
-              to="/register" 
-              onClick={() => setOpen(false)}
-              className="px-4 py-2 bg-orange-500 text-white rounded-2xl hover:bg-orange-600 transition text-center"
-            >
-              Register
-            </Link>
-          </li>
-        </ul>
-      )}
     </nav>
   );
 }

@@ -2,12 +2,9 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-export default function Login() {
+export default function Login({ setRole }) {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    username: '', 
-    password: ''
-  });
+  const [formData, setFormData] = useState({ username: '', password: '' });
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -22,20 +19,17 @@ export default function Login() {
         password: formData.password
       });
 
-      // 🔑 Save token and role in localStorage for all future requests
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('role', res.data.role);
 
+      if (setRole) setRole(res.data.role);
+
       alert(res.data.message);
 
-      // Redirect based on role
-      if (res.data.role === 'admin') {
-        navigate('/admin-dashboard'); 
-      } else if (res.data.role === 'employee') {
-        navigate('/employee-dashboard'); 
-      } else {
-        navigate('/'); 
-      }
+      if (res.data.role === 'admin') navigate('/admin-dashboard');
+      else if (res.data.role === 'employee') navigate('/employee-dashboard');
+      else if (res.data.role === 'user') navigate('/user-dashboard');
+      else navigate('/');
 
     } catch (err) {
       console.error(err.response?.data);
@@ -60,7 +54,6 @@ export default function Login() {
               required
             />
           </div>
-
           <div>
             <label className="block text-gray-700">Password</label>
             <input
@@ -73,7 +66,6 @@ export default function Login() {
               required
             />
           </div>
-
           <button
             type="submit"
             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg"
@@ -81,7 +73,6 @@ export default function Login() {
             Login
           </button>
         </form>
-
         <p className="mt-4 text-center text-gray-600">
           Don’t have an account?{' '}
           <Link to="/register" className="text-orange-500 hover:underline">
