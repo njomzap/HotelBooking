@@ -22,6 +22,7 @@ const hotelsRoutes = require('./routes/hotels');
 const bookingsRoutes = require('./routes/bookings');
 const extraRequestsRoutes = require('./routes/extraRequests');
 const lostFoundRoutes = require('./routes/lostFound');
+const reviewsRoutes = require('./routes/reviews');
 
 app.use('/api/users', userRoutes);
 app.use('/api/rooms', roomsRoutes);
@@ -29,6 +30,7 @@ app.use('/api/hotels', hotelsRoutes);
 app.use('/api/bookings/', bookingsRoutes);
 app.use("/api/extra-requests", extraRequestsRoutes);
 app.use('/api/lostfound', lostFoundRoutes);
+app.use('/api/reviews', reviewsRoutes);
 
 app.get('/', (req, res) => {
   res.send('API is running');

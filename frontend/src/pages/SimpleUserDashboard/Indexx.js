@@ -8,7 +8,7 @@ export default function SimpleUserDashboard() {
       <p className="mb-6 text-gray-700">Find the best hotels at the best prices!</p>
 
       <Link
-        to="/user/hotels"
+        to="/hotels"
         className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
       >
         Browse Hotels

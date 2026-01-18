@@ -1,34 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-// Navbars & Footer
 import Navbar from './components/Navbar';
 import UserNavbar from './components/UserNavbar';
 import Footer from './components/Footer';
 
-// Public Pages
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import About from './pages/About';
+import Catalogue from './pages/Catalogue'; 
 
-// Simple User Pages (default exports)
 import SimpleUserDashboard from './pages/SimpleUserDashboard/Indexx';
 import Bookings from './pages/SimpleUserDashboard/bookingss';
-import HotelsUser from './pages/SimpleUserDashboard/hotelss';
 import Profile from './pages/SimpleUserDashboard/profilee';
 import LostFoundUser from './pages/SimpleUserDashboard/lostAndFound';
 
-// Admin Pages
 import AdminDashboard from './pages/AdminDashboard/Index';
 import HotelsAdmin from './pages/AdminDashboard/Hotels';
 
-// Employee Pages
 import EmployeeDashboard from './pages/EmployeeDashboard/index';
 import EmployeeHotels from './pages/EmployeeDashboard/hotels';
 import LostFoundEmployee from './pages/LostFound';
 
-// Protected Route Component
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
@@ -43,15 +37,24 @@ export default function App() {
     <Router>
       <div className="flex flex-col min-h-screen">
         
+        {/* Navbar changes depending on user role */}
         {role === 'user' ? <UserNavbar setRole={setRole} /> : <Navbar setRole={setRole} />}
 
         <main className="flex-grow">
           <Routes>
-         
+            
+            {/* PUBLIC ROUTES */}
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login setRole={setRole} />} />
             <Route path="/register" element={<Register />} />
             <Route path="/about" element={<About />} />
+
+            <Route path="/catalogue" element={<Catalogue />} />
+
+            <Route path="/hotels" element={<Catalogue user={role ? { role } : null} />} />
+ 
+
+
 
             <Route
               path="/admin-dashboard"
@@ -62,7 +65,7 @@ export default function App() {
               }
             />
             <Route
-              path="/hotels"
+              path="/admin/hotels"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <HotelsAdmin />
@@ -104,14 +107,6 @@ export default function App() {
               }
             />
             <Route
-              path="/user/hotels"
-              element={
-                <ProtectedRoute allowedRoles={['user']}>
-                  <HotelsUser />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/user/bookings"
               element={
                 <ProtectedRoute allowedRoles={['user']}>
@@ -135,6 +130,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
           </Routes>
         </main>
 

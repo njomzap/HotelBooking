@@ -28,7 +28,7 @@ export default function UserNavbar({ setRole }) {
             </Link>
           </li>
           <li>
-            <Link to="/user/hotels" className="hover:text-orange-500 transition">
+            <Link to="/hotels" className="hover:text-orange-500 transition">
               Hotels
             </Link>
           </li>

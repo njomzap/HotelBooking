@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 export default function HomePage() {
   return (
@@ -20,9 +21,11 @@ export default function HomePage() {
             Discover amazing hotels and resorts worldwide. Book with confidence
             and enjoy unforgettable experiences.
           </p>
+          <Link to="/hotels">
           <button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg transition">
             Browse Hotels
           </button>
+          </Link>
         </div>
       </div>
 
