@@ -43,28 +43,18 @@ exports.getBookingById = async (req, res) => {
 exports.createBooking = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { room_id, check_in, check_out, status } = req.body;
-
-    if (!room_id || !check_in || !check_out) {
-      return res.status(400).json({ message: "Missing required fields" });
-    }
-
-    const validStatuses = ["pending", "confirmed", "cancelled", "completed"];
-    const bookingStatus = validStatuses.includes(status) ? status : "confirmed";
+    const { room_id, check_in, check_out } = req.body;
 
     const [result] = await db.query(
       `INSERT INTO bookings (user_id, room_id, check_in, check_out, status)
-       VALUES (?, ?, ?, ?, ?)`,
-      [userId, room_id, check_in, check_out, bookingStatus]
+       VALUES (?, ?, ?, ?, 'pending')`,
+      [userId, room_id, check_in, check_out]
     );
 
     res.status(201).json({
-      id: result.insertId,
-      user_id: userId,
-      room_id,
-      check_in,
-      check_out,
-      status: bookingStatus
+      booking_id: result.insertId,
+      status: "pending",
+      message: "Booking created. Awaiting payment."
     });
   } catch (err) {
     console.error("BOOKING ERROR:", err);

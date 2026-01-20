@@ -31,6 +31,8 @@ app.use('/api/bookings/', bookingsRoutes);
 app.use("/api/extra-requests", extraRequestsRoutes);
 app.use('/api/lostfound', lostFoundRoutes);
 app.use('/api/reviews', reviewsRoutes);
+app.use("/api/payments", require("./routes/payments"));
+
 
 app.get('/', (req, res) => {
   res.send('API is running');
