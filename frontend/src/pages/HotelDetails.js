@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 
 import RoomCard from "../components/RoomCard";
+import ReviewsList from "../components/reviewsList";
 
 const isLoggedIn = true;
 
@@ -126,6 +127,10 @@ const HotelDetails = () => {
             {hotel.parking && <span>🅿️ Parking</span>}
           </div>
         </div>
+      </div>
+      <div>
+        <h2 className="text-2xl font-semibold text-orange-600 mb-4">Reviews</h2>
+        <ReviewsList hotelId={id} />
       </div>
 
    

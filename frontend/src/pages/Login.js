@@ -19,8 +19,10 @@ export default function Login({ setRole }) {
         password: formData.password
       });
 
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('role', res.data.role);
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("role", res.data.role);
+        localStorage.setItem("userId", res.data.id); 
+
 
       if (setRole) setRole(res.data.role);
 

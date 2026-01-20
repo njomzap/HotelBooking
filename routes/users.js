@@ -11,6 +11,7 @@ router.get("/me", authMiddleware, usersController.getMe);
 router.put("/me/username", authMiddleware, usersController.updateUsername);
 router.put("/me/password", authMiddleware, usersController.changePassword);
 router.delete("/me", authMiddleware, usersController.deleteAccount);
+router.patch("/role/:id", authMiddleware, requireRole("admin"), usersController.updateRole);
 
 router.get("/", authMiddleware, requireRole("admin"), usersController.getAllUsers);
 

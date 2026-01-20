@@ -10,6 +10,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import About from './pages/About';
 import Catalogue from './pages/Catalogue'; 
+import HotelDetails from './pages/HotelDetails';
+
 
 import SimpleUserDashboard from './pages/SimpleUserDashboard/Indexx';
 import Bookings from './pages/SimpleUserDashboard/bookingss';
@@ -24,6 +26,8 @@ import EmployeeHotels from './pages/EmployeeDashboard/hotels';
 import LostFoundEmployee from './pages/LostFound';
 
 import ProtectedRoute from './components/ProtectedRoute';
+
+
 
 export default function App() {
   const [role, setRole] = useState(null);
@@ -54,6 +58,12 @@ export default function App() {
             <Route path="/hotels" element={<Catalogue user={role ? { role } : null} />} />
  
 
+            <Route 
+            path="/hotels/:id" 
+            element={
+              <HotelDetails />
+              } 
+            />
 
 
             <Route

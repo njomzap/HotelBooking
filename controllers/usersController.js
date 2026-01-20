@@ -41,11 +41,16 @@ exports.register = async (req, res) => {
 // LOGIN
 exports.login = async (req, res) => {
   const { username, password } = req.body;
-  if (!username || !password) return res.status(400).json({ message: "Username and password are required" });
+  if (!username || !password)
+    return res.status(400).json({ message: "Username and password are required" });
 
   try {
-    const [rows] = await pool.query("SELECT * FROM users WHERE username = ?", [username]);
-    if (rows.length === 0) return res.status(400).json({ message: "User not found" });
+    const [rows] = await pool.query(
+      "SELECT * FROM users WHERE username = ?",
+      [username]
+    );
+    if (rows.length === 0)
+      return res.status(400).json({ message: "User not found" });
 
     const valid = await bcrypt.compare(password, rows[0].password);
     if (!valid) return res.status(401).json({ message: "Incorrect password" });
@@ -56,12 +61,13 @@ exports.login = async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    res.json({ token, role: rows[0].role });
+    res.json({ token, role: rows[0].role, id: rows[0].id });
   } catch (err) {
     console.error("LOGIN ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 exports.getMe = async (req, res) => {
   try {
@@ -132,5 +138,20 @@ exports.getAllUsers = async (req, res) => {
   } catch (err) {
     console.error("GET ALL USERS ERROR:", err);
     res.status(500).json({ message: "Failed to fetch users" });
+  }
+};
+exports.updateRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    if (!role) return res.status(400).json({ message: "Role is required" });
+
+    await pool.query("UPDATE users SET role = ? WHERE id = ?", [role, id]);
+
+    res.json({ message: "Role updated successfully" });
+  } catch (err) {
+    console.error("UPDATE ROLE ERROR:", err);
+    res.status(500).json({ message: "Failed to update role" });
   }
 };
