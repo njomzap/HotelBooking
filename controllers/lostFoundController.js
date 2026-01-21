@@ -2,7 +2,7 @@ const pool = require('../db');
 
 const getLostAndFound = async (req, res) => {
   try {
-    const [items] = await pool.query("SELECT * FROM lost_found");
+    const [items] = await pool.query("SELECT * FROM lost_and_found");
     res.json(items);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -12,7 +12,7 @@ const getLostAndFound = async (req, res) => {
 
 const getItemById = async (req, res) => {
   try {
-    const [item] = await pool.query("SELECT * FROM lost_found WHERE id = ?", [req.params.id]);
+    const [item] = await pool.query("SELECT * FROM lost_and_found WHERE id = ?", [req.params.id]);
     if (item.length === 0) return res.status(404).json({ message: "Item not found" });
     res.json(item[0]);
   } catch (err) {
@@ -25,7 +25,7 @@ const createItem = async (req, res) => {
   try {
     const { item_name, description, date_found, location } = req.body;
     const [result] = await pool.query(
-      "INSERT INTO lost_found (item_name, description, date_found, location) VALUES (?, ?, ?, ?)",
+      "INSERT INTO lost_and_found (item_name, description, date_found, location) VALUES (?, ?, ?, ?)",
       [item_name, description, date_found, location]
     );
     res.status(201).json({ id: result.insertId, ...req.body });
@@ -39,7 +39,7 @@ const updateItem = async (req, res) => {
   try {
     const { item_name, description, date_found, location, claimed } = req.body;
     await pool.query(
-      "UPDATE lost_found SET item_name=?, description=?, date_found=?, location=?, claimed=? WHERE id=?",
+      "UPDATE lost_and_found SET item_name=?, description=?, date_found=?, location=?, claimed=? WHERE id=?",
       [item_name, description, date_found, location, claimed, req.params.id]
     );
     res.json({ message: "Item updated successfully" });
@@ -51,7 +51,7 @@ const updateItem = async (req, res) => {
 
 const deleteItem = async (req, res) => {
   try {
-    await pool.query("DELETE FROM lost_found WHERE id=?", [req.params.id]);
+    await pool.query("DELETE FROM lost_and_found WHERE id=?", [req.params.id]);
     res.json({ message: "Item deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
