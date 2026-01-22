@@ -36,23 +36,30 @@ exports.createCheckoutSession = async (req, res) => {
     }
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      mode: "payment",
-      line_items: [
-        {
-          price_data: {
-            currency: "eur",
-            product_data: {
-              name: "Hotel Booking Payment",
-            },
-            unit_amount: booking.total_price * 100, 
-          },
-          quantity: 1,
+  payment_method_types: ["card"],
+  mode: "payment",
+  line_items: [
+    {
+      price_data: {
+        currency: "eur",
+        product_data: {
+          name: "Hotel Booking Payment",
         },
-      ],
-      success_url: `${process.env.FRONTEND_URL}/user/bookings`,
-      cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`,
-    });
+        unit_amount: booking.total_price * 100,
+      },
+      quantity: 1,
+    },
+  ],
+
+  metadata: {
+    bookingId: booking.id.toString(),
+  },
+
+  success_url: `${process.env.FRONTEND_URL}/user/bookings`,
+  cancel_url: `${process.env.FRONTEND_URL}/payment-cancel`,
+});
+
+    
 
     res.json({ url: session.url });
   } catch (err) {

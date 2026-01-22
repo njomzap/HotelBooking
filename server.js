@@ -1,5 +1,5 @@
-require('dotenv').config();   // <-- load env first
-const app = require('./app'); // now app.js will see env variables
+require('dotenv').config();
+const app = require('./app');
 
 const PORT = process.env.PORT || 5000;
 
