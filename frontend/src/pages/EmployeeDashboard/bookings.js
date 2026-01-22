@@ -96,6 +96,7 @@ const ManageBookings = () => {
                 <th className="px-4 py-2 border">Check-in</th>
                 <th className="px-4 py-2 border">Check-out</th>
                 <th className="px-4 py-2 border">Status</th>
+                <th className="px-4 py-2 border">Total Price</th>
                 <th className="px-4 py-2 border">Extra Requests</th>
                 <th className="px-4 py-2 border">Actions</th>
               </tr>
@@ -106,6 +107,7 @@ const ManageBookings = () => {
                 if (booking.status === "pending") statusClass = "text-yellow-600";
                 if (booking.status === "cancelled") statusClass = "text-red-600";
                 if (booking.status === "completed") statusClass = "text-green-600";
+                if (booking.status === "confirmed") statusClass = "text-blue-600";
 
                 return (
                   <tr key={booking.id} className="hover:bg-gray-50">
@@ -120,6 +122,12 @@ const ManageBookings = () => {
                     </td>
                     <td className={`px-4 py-2 border font-semibold ${statusClass}`}>
                       {booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
+                    </td>
+                    <td className="px-4 py-2 border font-bold text-orange-500">
+                      $
+                      {booking.total_price
+                        ? Number(booking.total_price).toFixed(2)
+                        : '0.00'}
                     </td>
                     <td className="px-4 py-2 border">
                       {booking.extraRequests && booking.extraRequests.length > 0 ? (

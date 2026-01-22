@@ -9,14 +9,14 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import About from './pages/About';
-import Catalogue from './pages/Catalogue'; 
+import Catalogue from './pages/Catalogue';
 import HotelDetails from './pages/HotelDetails';
-
+import RoomDetail from './pages/RoomDetails';
 
 import SimpleUserDashboard from './pages/SimpleUserDashboard/Indexx';
-import Bookings from './pages/SimpleUserDashboard/bookingss';
 import Profile from './pages/SimpleUserDashboard/profilee';
 import LostFoundUser from './pages/SimpleUserDashboard/lostAndFound';
+import UserBookings from './pages/SimpleUserDashboard/UserBookings'; 
 
 import AdminDashboard from './pages/AdminDashboard/Index';
 import HotelsAdmin from './pages/AdminDashboard/Hotels';
@@ -26,8 +26,6 @@ import EmployeeHotels from './pages/EmployeeDashboard/hotels';
 import LostFoundEmployee from './pages/LostFound';
 
 import ProtectedRoute from './components/ProtectedRoute';
-
-
 
 export default function App() {
   const [role, setRole] = useState(null);
@@ -40,32 +38,22 @@ export default function App() {
   return (
     <Router>
       <div className="flex flex-col min-h-screen">
-        
-        {/* Navbar changes depending on user role */}
+   
         {role === 'user' ? <UserNavbar setRole={setRole} /> : <Navbar setRole={setRole} />}
 
         <main className="flex-grow">
           <Routes>
-            
-            {/* PUBLIC ROUTES */}
+           
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login setRole={setRole} />} />
             <Route path="/register" element={<Register />} />
             <Route path="/about" element={<About />} />
-
             <Route path="/catalogue" element={<Catalogue />} />
-
             <Route path="/hotels" element={<Catalogue user={role ? { role } : null} />} />
- 
+            <Route path="/hotels/:id" element={<HotelDetails />} />
+            <Route path="/rooms/:id" element={<RoomDetail />} />
 
-            <Route 
-            path="/hotels/:id" 
-            element={
-              <HotelDetails />
-              } 
-            />
-
-
+         
             <Route
               path="/admin-dashboard"
               element={
@@ -108,6 +96,7 @@ export default function App() {
               }
             />
 
+           
             <Route
               path="/user-dashboard"
               element={
@@ -120,7 +109,7 @@ export default function App() {
               path="/user/bookings"
               element={
                 <ProtectedRoute allowedRoles={['user']}>
-                  <Bookings />
+                  <UserBookings />
                 </ProtectedRoute>
               }
             />
@@ -140,7 +129,6 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-
           </Routes>
         </main>
 
