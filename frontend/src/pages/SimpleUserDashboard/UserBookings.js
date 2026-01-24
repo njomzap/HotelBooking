@@ -4,158 +4,333 @@ import axios from "axios";
 const BOOKINGS_API = "http://localhost:5000/api/bookings";
 const PAYMENTS_API = "http://localhost:5000/api/payments";
 
+const statusColors = {
+  pending: "#FFA500",
+  pending_payment: "#FF8C00",
+  confirmed: "#FF7A33",
+  cancelled: "#FF6347",
+  completed: "#FF4500",
+  paid: "#FF7A33",
+};
+
 const UserBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [payingId, setPayingId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editCheckIn, setEditCheckIn] = useState("");
+  const [editCheckOut, setEditCheckOut] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const token = localStorage.getItem("token");
-  const userId = localStorage.getItem("userId");
 
-  const headers = { headers: { Authorization: `Bearer ${token}` } };
+  useEffect(() => {
+    fetchBookings();
+    // eslint-disable-next-line
+  }, []);
 
-  // Fetch bookings from backend
   const fetchBookings = async () => {
-    setLoading(true);
     try {
-      const res = await axios.get(`${BOOKINGS_API}/user/${userId}`, headers);
-      setBookings(res.data);
-      setError("");
+      const res = await axios.get(`${BOOKINGS_API}/user/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setBookings(res.data || []);
     } catch (err) {
-      console.error("Fetch bookings error:", err);
       setError("Failed to load bookings");
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle Stripe payment
+  const startEdit = (booking) => {
+    setEditingId(booking.id);
+    setEditCheckIn(booking.check_in?.split("T")[0] || "");
+    setEditCheckOut(booking.check_out?.split("T")[0] || "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditCheckIn("");
+    setEditCheckOut("");
+  };
+
+  const saveEdit = async (bookingId) => {
+    try {
+      setSaving(true);
+      await axios.put(
+        `${BOOKINGS_API}/user/${bookingId}`,
+        { check_in: editCheckIn, check_out: editCheckOut },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      await fetchBookings();
+      cancelEdit();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to update booking");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const cancelBooking = async (bookingId) => {
+    if (!window.confirm("Are you sure you want to cancel this booking?")) return;
+    try {
+      await axios.delete(`${BOOKINGS_API}/${bookingId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      await fetchBookings();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to cancel booking");
+    }
+  };
+
   const handlePayment = async (bookingId) => {
-    setPayingId(bookingId);
     try {
       const res = await axios.post(
         `${PAYMENTS_API}/create-checkout-session`,
         { bookingId },
-        headers
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      // Open Stripe checkout in new tab
-      window.open(res.data.url, "_blank");
-
-      // Poll backend after a few seconds to update booking status
-      setTimeout(fetchBookings, 5000);
+      window.location.href = res.data.url;
     } catch (err) {
-      console.error("Payment error:", err);
-      alert("Payment failed. Please try again.");
-    } finally {
-      setPayingId(null);
+      alert("Payment failed");
     }
   };
 
-  useEffect(() => {
-    fetchBookings();
-    const interval = setInterval(fetchBookings, 30000); // refresh every 30s
-    return () => clearInterval(interval);
-  }, [userId]);
-
-  if (loading)
-    return (
-      <div className="text-center mt-10 text-gray-500">
-        Loading your bookings...
-      </div>
-    );
-  if (error)
-    return <div className="text-center mt-10 text-red-500">{error}</div>;
+  if (loading) return <p>Loading bookings...</p>;
+  if (error) return <p>{error}</p>;
 
   return (
-    <div className="max-w-7xl mx-auto mt-24 px-4">
-      <h2 className="text-4xl font-bold mb-10 text-center text-gray-800">
-        Your Bookings
+    <div
+      style={{
+        maxWidth: "900px",
+        margin: "3rem auto",
+        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+      }}
+    >
+      <h2
+        style={{
+          textAlign: "center",
+          marginBottom: "2.5rem",
+          fontSize: "2.2rem",
+          color: "#FF7A33",
+          fontWeight: "700",
+        }}
+      >
+        My Bookings
       </h2>
 
-      {bookings.length === 0 ? (
-        <p className="text-center text-gray-400 italic">
-          You have no bookings yet.
-        </p>
-      ) : (
-        <div className="grid gap-8 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {bookings.map((b) => {
-            const checkIn = new Date(b.check_in).toLocaleDateString();
-            const checkOut = new Date(b.check_out).toLocaleDateString();
-            const nights = Math.ceil(
-              (new Date(b.check_out) - new Date(b.check_in)) / (1000 * 60 * 60 * 24)
-            );
-            const total = Number(b.total_price);
-
-            // Show Stripe button if booking is unpaid
-            const isPendingPayment =
-              b.status === "pending" || b.status === "pending_payment";
-
-            // Status color mapping
-            let statusColor = "bg-gray-100 text-gray-700";
-            if (b.status === "pending" || b.status === "pending_payment")
-              statusColor = "bg-yellow-100 text-yellow-800";
-            else if (b.status === "confirmed")
-              statusColor = "bg-green-100 text-green-800";
-            else if (b.status === "cancelled")
-              statusColor = "bg-red-100 text-red-800";
-            else if (b.status === "completed")
-              statusColor = "bg-blue-100 text-blue-800";
-
-            // Debugging: optional
-            // console.log("Booking:", b.id, "status:", b.status, "isPendingPayment:", isPendingPayment);
-
-            return (
-              <div
-                key={b.id}
-                className="bg-white border rounded-3xl shadow-md p-6 flex flex-col justify-between hover:shadow-2xl transition-all"
-              >
-                <div className="mb-4">
-                  <h3 className="text-2xl font-semibold mb-2 text-gray-800">
-                    {b.room_name}
-                  </h3>
-                  <p className="text-gray-600 mb-1">
-                    <span className="font-semibold">Hotel:</span> {b.hotel_name}
-                  </p>
-                  <p className="text-gray-600 mb-1">
-                    <span className="font-semibold">Check-in:</span> {checkIn}
-                  </p>
-                  <p className="text-gray-600 mb-1">
-                    <span className="font-semibold">Check-out:</span> {checkOut}
-                  </p>
-                  <p className="text-gray-600 mb-2">
-                    <span className="font-semibold">Nights:</span> {nights}
-                  </p>
-
-                  <p className="font-bold text-orange-500 mb-2 text-lg">
-                    Total: ${total.toFixed(2)}
-                  </p>
-
-                  <p className="text-gray-700 font-semibold mb-1">
-                    Payment Status:
-                  </p>
-                  <span
-                    className={`inline-block px-4 py-1 rounded-full text-sm font-semibold ${statusColor}`}
-                  >
-                    {b.status.replace("_", " ").toUpperCase()}
-                  </span>
-                </div>
-
-                {isPendingPayment && (
-                  <button
-                    onClick={() => handlePayment(b.id)}
-                    disabled={payingId === b.id}
-                    className="mt-4 w-full bg-gradient-to-r from-orange-400 to-orange-500 text-white font-semibold py-2 rounded-full hover:from-orange-500 hover:to-orange-600 disabled:opacity-50 transition-all"
-                  >
-                    {payingId === b.id ? "Processing..." : "Pay with Stripe Sandbox"}
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
+      {bookings.length === 0 && (
+        <p style={{ textAlign: "center", color: "#777" }}>No bookings found.</p>
       )}
+
+      {bookings.map((booking) => {
+        // Fallbacks for missing fields
+        const status = booking.status || "pending";
+        const paymentStatus = booking.payment_status || "pending";
+        const hotelName = booking.hotel_name || "Hotel";
+        const roomName = booking.room_name || "Room";
+        const totalPrice = booking.total_price ?? 0;
+        const checkIn = booking.check_in?.slice(0, 10) || "N/A";
+        const checkOut = booking.check_out?.slice(0, 10) || "N/A";
+
+        return (
+          <div
+            key={booking.id}
+            style={{
+              borderRadius: "16px",
+              padding: "1.8rem",
+              marginBottom: "1.8rem",
+              boxShadow: "0 6px 20px rgba(255,165,0,0.1)",
+              transition: "transform 0.3s, box-shadow 0.3s",
+              backgroundColor: "#fff",
+              borderLeft: `5px solid ${statusColors[status] || "#FFA500"}`,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-6px)";
+              e.currentTarget.style.boxShadow = "0 12px 30px rgba(255,165,0,0.15)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 6px 20px rgba(255,165,0,0.1)";
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "0.8rem",
+              }}
+            >
+              <h3 style={{ fontSize: "1.4rem", fontWeight: "600", color: "#FF7A33" }}>
+                {hotelName} — {roomName}
+              </h3>
+
+              <span
+                style={{
+                  padding: "0.3rem 0.8rem",
+                  borderRadius: "20px",
+                  fontWeight: "600",
+                  fontSize: "0.85rem",
+                  color: "#fff",
+                  backgroundColor: statusColors[status] || "#FFA500",
+                }}
+              >
+                {status}
+              </span>
+            </div>
+
+            {editingId === booking.id ? (
+              <div style={{ marginTop: "1rem" }}>
+                <label>
+                  Check-in:
+                  <input
+                    type="date"
+                    value={editCheckIn}
+                    onChange={(e) => setEditCheckIn(e.target.value)}
+                    style={{
+                      marginLeft: "0.5rem",
+                      padding: "0.4rem",
+                      borderRadius: "8px",
+                      border: "1px solid #FFB366",
+                    }}
+                  />
+                </label>
+                <label style={{ marginLeft: "1rem" }}>
+                  Check-out:
+                  <input
+                    type="date"
+                    value={editCheckOut}
+                    onChange={(e) => setEditCheckOut(e.target.value)}
+                    style={{
+                      marginLeft: "0.5rem",
+                      padding: "0.4rem",
+                      borderRadius: "8px",
+                      border: "1px solid #FFB366",
+                    }}
+                  />
+                </label>
+
+                <div style={{ marginTop: "1rem" }}>
+                  <button
+                    onClick={() => saveEdit(booking.id)}
+                    disabled={saving}
+                    style={{
+                      padding: "0.5rem 1rem",
+                      marginRight: "0.6rem",
+                      backgroundColor: "#FF7A33",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "12px",
+                      cursor: "pointer",
+                      fontWeight: "600",
+                    }}
+                  >
+                    {saving ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    onClick={cancelEdit}
+                    disabled={saving}
+                    style={{
+                      padding: "0.5rem 1rem",
+                      backgroundColor: "#FF4500",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "12px",
+                      cursor: "pointer",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ marginTop: "1rem", color: "#555" }}>
+                <p>
+                  <strong>Dates:</strong> {checkIn} → {checkOut}
+                </p>
+                <p>
+                  <strong>Total:</strong> €{totalPrice}
+                </p>
+                <p>
+                  <strong>Payment Status:</strong>{" "}
+                  <span
+                    style={{
+                      padding: "0.3rem 0.8rem",
+                      borderRadius: "20px",
+                      color: "#fff",
+                      backgroundColor: statusColors[paymentStatus] || "#FFA500",
+                      fontWeight: "600",
+                      fontSize: "0.85rem",
+                    }}
+                  >
+                    {paymentStatus}
+                  </span>
+                </p>
+
+                <div style={{ marginTop: "1rem" }}>
+                  {status !== "cancelled" && (
+                    <>
+                      <button
+                        onClick={() => startEdit(booking)}
+                        disabled={status !== "pending_payment"}
+                        style={{
+                          padding: "0.45rem 1rem",
+                          marginRight: "0.5rem",
+                          backgroundColor: "#FFB366",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "12px",
+                          cursor: status !== "pending_payment" ? "not-allowed" : "pointer",
+                          opacity: status !== "pending_payment" ? 0.6 : 1,
+                          fontWeight: "600",
+                        }}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        onClick={() => cancelBooking(booking.id)}
+                        style={{
+                          padding: "0.45rem 1rem",
+                          marginRight: "0.5rem",
+                          backgroundColor: "#FF7A33",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "12px",
+                          cursor: "pointer",
+                          fontWeight: "600",
+                        }}
+                      >
+                        Cancel
+                      </button>
+
+                      {status === "pending_payment" && (
+                        <button
+                          onClick={() => handlePayment(booking.id)}
+                          style={{
+                            padding: "0.5rem 1.2rem",
+                            backgroundColor: "#FF4500",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: "14px",
+                            cursor: "pointer",
+                            fontWeight: "700",
+                            boxShadow: "0 4px 15px rgba(255,69,0,0.3)",
+                          }}
+                        >
+                          Pay Now
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };

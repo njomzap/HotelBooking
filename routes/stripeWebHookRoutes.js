@@ -2,9 +2,9 @@ const express = require("express");
 const router = express.Router();
 const webhookController = require("../controllers/stripeWebHookController");
 
-
+// Stripe requires raw body for signature verification
 router.post(
-  "/stripe",
+  "/",
   express.raw({ type: "application/json" }),
   webhookController.handleWebhook
 );
