@@ -36,15 +36,18 @@ const HotelDetails = () => {
   }, [id]);
 
   const fetchRooms = useCallback(async () => {
-    try {
-      const res = await axios.get(`http://localhost:5000/api/rooms?hotel_id=${id}`);
-      setRooms(res.data);
-    } catch (err) {
-      console.error("Error fetching rooms:", err);
-    } finally {
-      setRoomsLoading(false);
-    }
-  }, [id]);
+  try {
+    const res = await axios.get(
+      `http://localhost:5000/api/rooms/hotel/${id}`
+    );
+    setRooms(res.data);
+  } catch (err) {
+    console.error("Error fetching rooms:", err);
+  } finally {
+    setRoomsLoading(false);
+  }
+}, [id]);
+
 
   const fetchLostItems = useCallback(async () => {
     try {

@@ -20,6 +20,8 @@ const RoomDetail = () => {
   const [message, setMessage] = useState("");
   const [user, setUser] = useState(null);
 
+  const [currentImage, setCurrentImage] = useState(0);
+
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -32,6 +34,7 @@ const RoomDetail = () => {
       try {
         const res = await axios.get(`${API_URL}/${id}`);
         setRoom(res.data);
+        setCurrentImage(0);
       } catch (err) {
         console.error(err);
         alert("Room not found");
@@ -39,6 +42,18 @@ const RoomDetail = () => {
     };
     fetchRoom();
   }, [id]);
+
+  const nextImage = () => {
+    setCurrentImage((prev) =>
+      prev === room.images.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const prevImage = () => {
+    setCurrentImage((prev) =>
+      prev === 0 ? room.images.length - 1 : prev - 1
+    );
+  };
 
   const handleBooking = async () => {
     if (!room || !room.id) {
@@ -61,7 +76,6 @@ const RoomDetail = () => {
     setMessage("");
 
     try {
-      // 1️⃣ Create booking
       const bookingRes = await axios.post(
         BOOKINGS_API,
         {
@@ -79,7 +93,6 @@ const RoomDetail = () => {
       const bookingId = bookingRes.data.id;
       setCreatedBookingId(bookingId);
 
-      // 2️⃣ Create extra request (optional)
       if (extraRequest.trim()) {
         await axios.post(EXTRA_REQUESTS_API, {
           booking_id: bookingId,
@@ -109,16 +122,36 @@ const RoomDetail = () => {
         onClick={() => navigate(-1)}
         className="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200"
       >
-        &larr; Back to Hotel
+        ← Back to Hotel
       </button>
 
-      <div className="w-full h-96 overflow-hidden rounded-lg">
+      <div className="relative w-full h-96 overflow-hidden rounded-2xl shadow-md">
         {room.images && room.images.length > 0 ? (
-          <img
-            src={`http://localhost:5000${room.images[0]}`}
-            alt={room.room_name}
-            className="w-full h-full object-cover"
-          />
+          <>
+            <img
+              src={`http://localhost:5000${room.images[currentImage]}`}
+              alt={room.room_name}
+              className="w-full h-full object-cover transition-all duration-300"
+            />
+
+            {room.images.length > 1 && (
+              <>
+                <button
+                  onClick={prevImage}
+                  className="absolute top-1/2 left-4 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-700 rounded-full p-3 shadow"
+                >
+                  ‹
+                </button>
+
+                <button
+                  onClick={nextImage}
+                  className="absolute top-1/2 right-4 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-700 rounded-full p-3 shadow"
+                >
+                  ›
+                </button>
+              </>
+            )}
+          </>
         ) : (
           <div className="w-full h-full bg-gray-200 flex items-center justify-center">
             No Image
@@ -136,9 +169,15 @@ const RoomDetail = () => {
           </div>
 
           <div className="flex flex-wrap gap-6 text-gray-700 mt-4">
-            <div className="bg-gray-100 px-3 py-1 rounded">🛏 {room.capacity} Guests</div>
-            <div className="bg-gray-100 px-3 py-1 rounded">#️⃣ Room {room.room_number}</div>
-            <div className="bg-gray-100 px-3 py-1 rounded">💵 ${room.price} / night</div>
+            <div className="bg-gray-100 px-3 py-1 rounded">
+              🛏 {room.capacity} Guests
+            </div>
+            <div className="bg-gray-100 px-3 py-1 rounded">
+              #️⃣ Room {room.room_number}
+            </div>
+            <div className="bg-gray-100 px-3 py-1 rounded">
+              💵 ${room.price} / night
+            </div>
           </div>
 
           <div>
@@ -168,9 +207,10 @@ const RoomDetail = () => {
             />
           </div>
 
-          {/* EXTRA REQUEST INPUT */}
           <div>
-            <label className="block text-gray-600 mb-1">Extra Requests (optional)</label>
+            <label className="block text-gray-600 mb-1">
+              Extra Requests (optional)
+            </label>
             <textarea
               className="w-full border rounded px-3 py-2"
               rows="3"

@@ -1,5 +1,5 @@
 const express = require('express');
-const router = express.Router(); // ✅ router must be defined BEFORE using it
+const router = express.Router(); 
 const roomsController = require('../controllers/roomsController.js');
 const upload = require('../middlewares/uploads');
 
@@ -13,6 +13,9 @@ const {
 router.get('/', roomsController.getAllRooms);
 
 router.get('/:id', roomsController.getRoomById);
+
+router.get("/hotel/:hotelId", roomsController.getRoomsByHotel);
+
 
 
 router.post(

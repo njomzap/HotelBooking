@@ -23,18 +23,50 @@ const getAllRooms = async (req, res) => {
 };
 
 
+const getRoomsByHotel = async (req, res) => {
+  const { hotelId } = req.params;
+
+  try {
+    const [rooms] = await pool.query(
+      "SELECT * FROM rooms WHERE hotel_id = ?",
+      [hotelId]
+    );
+
+    for (let room of rooms) {
+      const [images] = await pool.query(
+        "SELECT image_url FROM room_images WHERE room_id = ?",
+        [room.id]
+      );
+      room.images = images.map(img => img.image_url);
+    }
+
+    res.json(rooms);
+  } catch (error) {
+    console.error("Error fetching rooms by hotel:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+
 const getRoomById = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const [roomRows] = await pool.query("SELECT * FROM rooms WHERE id = ?", [id]);
+    const [roomRows] = await pool.query(
+      "SELECT * FROM rooms WHERE id = ?",
+      [id]
+    );
+
     if (roomRows.length === 0) {
       return res.status(404).json({ error: "Room not found" });
     }
 
     const room = roomRows[0];
 
-    const [images] = await pool.query("SELECT image_url FROM room_images WHERE room_id = ?", [id]);
+    const [images] = await pool.query(
+      "SELECT image_url FROM room_images WHERE room_id = ?",
+      [id]
+    );
     room.images = images.map(img => img.image_url);
 
     res.json(room);
@@ -47,24 +79,32 @@ const getRoomById = async (req, res) => {
 
 const createRoom = async (req, res) => {
   try {
-    const { hotel_id, room_name, room_number, description, price, capacity } = req.body;
+    const { hotel_id, room_name, room_number, description, price, capacity } =
+      req.body;
 
-    const hotelIdNum = Number(hotel_id);
-    const priceNum = Number(price);
-    const capacityNum = Number(capacity);
-
-  
     const [result] = await pool.query(
-      "INSERT INTO rooms (hotel_id, room_name, room_number, description, price, capacity) VALUES (?, ?, ?, ?, ?, ?)",
-      [hotelIdNum, room_name, room_number, description, priceNum, capacityNum]
+      `INSERT INTO rooms 
+       (hotel_id, room_name, room_number, description, price, capacity) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        Number(hotel_id),
+        room_name,
+        room_number,
+        description,
+        Number(price),
+        Number(capacity),
+      ]
     );
 
     const roomId = result.insertId;
 
-  
     if (req.files && req.files.length > 0) {
       const placeholders = req.files.map(() => "(?, ?)").join(", ");
-      const values = req.files.flatMap(file => [roomId, `/uploads/${file.filename}`]);
+      const values = req.files.flatMap(file => [
+        roomId,
+        `/uploads/${file.filename}`,
+      ]);
+
       await pool.query(
         `INSERT INTO room_images (room_id, image_url) VALUES ${placeholders}`,
         values
@@ -83,25 +123,34 @@ const updateRoom = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const { hotel_id, room_name, room_number, description, price, capacity } = req.body;
-
-    const hotelIdNum = Number(hotel_id);
-    const priceNum = Number(price);
-    const capacityNum = Number(capacity);
+    const { hotel_id, room_name, room_number, description, price, capacity } =
+      req.body;
 
     const [result] = await pool.query(
-      "UPDATE rooms SET hotel_id = ?, room_name = ?, room_number = ?, description = ?, price = ?, capacity = ? WHERE id = ?",
-      [hotelIdNum, room_name, room_number, description, priceNum, capacityNum, id]
+      `UPDATE rooms 
+       SET hotel_id = ?, room_name = ?, room_number = ?, description = ?, price = ?, capacity = ?
+       WHERE id = ?`,
+      [
+        Number(hotel_id),
+        room_name,
+        room_number,
+        description,
+        Number(price),
+        Number(capacity),
+        id,
+      ]
     );
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "Room not found" });
     }
 
-   
     if (req.files && req.files.length > 0) {
-     
-      const [oldImages] = await pool.query("SELECT image_url FROM room_images WHERE room_id = ?", [id]);
+      const [oldImages] = await pool.query(
+        "SELECT image_url FROM room_images WHERE room_id = ?",
+        [id]
+      );
+
       oldImages.forEach(img => {
         const filePath = path.join(__dirname, "..", img.image_url);
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
@@ -109,10 +158,16 @@ const updateRoom = async (req, res) => {
 
       await pool.query("DELETE FROM room_images WHERE room_id = ?", [id]);
 
-     
       const placeholders = req.files.map(() => "(?, ?)").join(", ");
-      const values = req.files.flatMap(file => [id, `/uploads/${file.filename}`]);
-      await pool.query(`INSERT INTO room_images (room_id, image_url) VALUES ${placeholders}`, values);
+      const values = req.files.flatMap(file => [
+        id,
+        `/uploads/${file.filename}`,
+      ]);
+
+      await pool.query(
+        `INSERT INTO room_images (room_id, image_url) VALUES ${placeholders}`,
+        values
+      );
     }
 
     res.json({ message: "Room updated successfully" });
@@ -127,19 +182,23 @@ const deleteRoom = async (req, res) => {
   const { id } = req.params;
 
   try {
-   
-    const [result] = await pool.query("DELETE FROM rooms WHERE id = ?", [id]);
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Room not found" });
-    }
+    const [images] = await pool.query(
+      "SELECT image_url FROM room_images WHERE room_id = ?",
+      [id]
+    );
 
-    const [images] = await pool.query("SELECT image_url FROM room_images WHERE room_id = ?", [id]);
     images.forEach(img => {
       const filePath = path.join(__dirname, "..", img.image_url);
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     });
 
     await pool.query("DELETE FROM room_images WHERE room_id = ?", [id]);
+
+    const [result] = await pool.query("DELETE FROM rooms WHERE id = ?", [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Room not found" });
+    }
 
     res.json({ message: "Room deleted successfully" });
   } catch (error) {
@@ -150,6 +209,7 @@ const deleteRoom = async (req, res) => {
 
 module.exports = {
   getAllRooms,
+  getRoomsByHotel, 
   getRoomById,
   createRoom,
   updateRoom,
