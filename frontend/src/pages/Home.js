@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
+
 export default function HomePage() {
   return (
     <div className="w-full">
@@ -22,14 +23,13 @@ export default function HomePage() {
             and enjoy unforgettable experiences.
           </p>
           <Link to="/hotels">
-          <button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg transition">
-            Browse Hotels
-          </button>
+            <button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg transition">
+              Browse Hotels
+            </button>
           </Link>
         </div>
       </div>
 
-      {/* Why Choose Section */}
       <section className="py-20 bg-gray-50">
         <div className="text-center mb-12 px-4">
           <h2 className="text-3xl font-semibold mb-3 text-gray-800">
@@ -79,7 +79,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Call to Action Section */}
       <section className="bg-gradient-to-r from-orange-500 to-orange-600 py-20 text-center text-white">
         <h2 className="text-3xl md:text-4xl font-semibold mb-4">
           Ready to Book Your Next Stay?
@@ -92,7 +91,7 @@ export default function HomePage() {
         </button>
       </section>
 
+
     </div>
   );
 }
-

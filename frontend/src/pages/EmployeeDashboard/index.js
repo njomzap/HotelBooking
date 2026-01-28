@@ -1,76 +1,77 @@
-import React, { useState } from "react";
-import Rooms from "./rooms";
-import Bookings from "./bookings";
-import Profile from "./profile";
-import LostFound from "../LostFound"; // Import Lost & Found
-import Navbar from "../../components/Navbar";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import SummaryCard from "../../components/SummaryCardE";
+import QuickActionButton from "../../components/QuickActionButtonE";
+import axios from "axios";
 
 const EmployeeDashboard = () => {
-  const [activeTab, setActiveTab] = useState("rooms");
+  const navigate = useNavigate();
+  const token = localStorage.getItem("token");
 
-  const renderTab = () => {
-    switch (activeTab) {
-      case "rooms":
-        return <Rooms />;
-      case "bookings":
-        return <Bookings />;
-      case "profile":
-        return <Profile />;
-      case "lostfound":
-        return <LostFound />; // Shfaq Lost & Found kur klikojmë tab
-      default:
-        return <Rooms />;
-    }
-  };
+  const [summaryData, setSummaryData] = useState({
+    rooms: 0,
+    bookings: 0,
+    lostfound: 0,
+  });
 
-  const menuButton = (tab, label) => (
-    <button
-      onClick={() => setActiveTab(tab)}
-      className={`w-full text-left px-4 py-3 rounded-lg transition font-medium
-        ${
-          activeTab === tab
-            ? "bg-orange-500 text-white"
-            : "text-gray-300 hover:bg-gray-700"
-        }`}
-    >
-      {label}
-    </button>
-  );
+  // Fetch summary data
+  useEffect(() => {
+    if (!token) return;
+
+    const fetchSummary = async () => {
+      try {
+        const [roomsRes, bookingsRes, lostRes] = await Promise.all([
+          axios.get("http://localhost:5000/api/rooms", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get("http://localhost:5000/api/bookings", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get("http://localhost:5000/api/lostfound", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+        setSummaryData({
+          rooms: roomsRes.data.length,
+          bookings: bookingsRes.data.length,
+          lostfound: lostRes.data.length,
+        });
+      } catch (err) {
+        console.error(err.response?.data || err.message);
+      }
+    };
+
+    fetchSummary();
+  }, [token]);
+
+ 
+
+const goToRooms = () => navigate("/employee-dashboard/rooms");
+const goToBookings = () => navigate("/employee-dashboard/bookings");
+const goToLostFound = () => navigate("/employee-dashboard/lostfound");
+const goToProfile = () => navigate("/employee-dashboard/profile");
 
   return (
-    <div className="min-h-screen bg-gray-100 font-sans">
-      <Navbar />
+    <div className="space-y-8">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-3 gap-4">
+        <SummaryCard title="Rooms" value={summaryData.rooms} />
+        <SummaryCard title="Bookings" value={summaryData.bookings} />
+        <SummaryCard title="Lost & Found" value={summaryData.lostfound} />
+      </div>
 
-      <div className="flex pt-20">
-        {/* Sidebar menu */}
-        <aside className="w-64 bg-gray-800 min-h-screen p-6">
-          <h2 className="text-2xl font-bold text-orange-500 mb-8">
-            Employee Panel
-          </h2>
-
-          <nav className="space-y-2">
-            {menuButton("rooms", "Rooms")}
-            {menuButton("bookings", "Bookings")}
-            {menuButton("profile", "Profile")}
-            {menuButton("lostfound", "Lost & Found")} {/* Shto Lost & Found */}
-          </nav>
-        </aside>
-
-        {/* Main content */}
-        <main className="flex-1 p-8">
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h1 className="text-3xl font-bold text-gray-800 mb-6">
-              {activeTab === "lostfound"
-                ? "Lost & Found"
-                : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
-            </h1>
-
-            {renderTab()}
-          </div>
-        </main>
+      {/* Quick Action Buttons */}
+      <div className="grid grid-cols-4 gap-4">
+        <QuickActionButton title="Rooms" onClick={goToRooms} />
+        <QuickActionButton title="Bookings" onClick={goToBookings} />
+        <QuickActionButton title="Lost & Found" onClick={goToLostFound} />
+        <QuickActionButton title="Profile" onClick={goToProfile} />
       </div>
     </div>
   );
 };
 
 export default EmployeeDashboard;
+
+

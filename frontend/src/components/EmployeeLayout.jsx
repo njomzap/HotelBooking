@@ -1,0 +1,60 @@
+import React from "react";
+import { Outlet } from "react-router-dom";
+import EmployeeSidebar from "./EmployeeSidebar";
+
+export default function EmployeeLayout() {
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    window.location.href = "/login";
+  };
+
+  return (
+    <div className="flex min-h-screen bg-gray-100">
+
+      {/* SIDEBAR */}
+      <div className="flex flex-col w-64 bg-white border-r">
+        <EmployeeSidebar />
+
+        <div className="mt-auto p-4 border-t">
+          <button
+            onClick={handleLogout}
+            className="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+
+      {/* CONTENT AREA */}
+      <div className="flex-1 flex flex-col">
+
+        {/* HEADER */}
+        <div className="flex items-center justify-between bg-white px-6 py-4 border-b shadow-sm">
+          <div className="flex items-center gap-2">
+            <img
+              src="/images/logo.png"
+              alt="Logo"
+              className="w-8 h-8 rounded-lg"
+            />
+            <h1 className="text-xl font-semibold text-gray-800">
+              Employee Portal
+            </h1>
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-orange-500 text-white rounded-2xl hover:bg-orange-600 transition"
+          >
+            Logout
+          </button>
+        </div>
+
+        {/* PAGE CONTENT */}
+        <main className="flex-1 p-6">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}

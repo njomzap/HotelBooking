@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 const LostFound = () => {
+  const token = localStorage.getItem("token");
+  const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
+
   const [items, setItems] = useState([]);
   const [form, setForm] = useState({
     item_name: "",
@@ -15,10 +18,11 @@ const LostFound = () => {
 
   const fetchItems = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/lostfound");
+      const res = await axios.get("http://localhost:5000/api/lostfound", authHeaders);
       setItems(res.data);
     } catch (err) {
       console.error(err);
+      alert("Failed to fetch lost & found items");
     }
   };
 
@@ -28,60 +32,40 @@ const LostFound = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm({
-      ...form,
-      [name]: type === "checkbox" ? checked : value,
-    });
+    setForm({ ...form, [name]: type === "checkbox" ? checked : value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("http://localhost:5000/api/lostfound", form);
+      if (editItem) {
+        await axios.put(`http://localhost:5000/api/lostfound/${editItem.id}`, form, authHeaders);
+        setEditItem(null);
+      } else {
+        await axios.post("http://localhost:5000/api/lostfound", form, authHeaders);
+      }
       setForm({ item_name: "", description: "", date_found: "", location: "", claimed: false });
       setShowAddForm(false);
       fetchItems();
     } catch (err) {
       console.error(err);
+      alert("Action failed");
     }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this item?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/lostfound/${id}`);
+      await axios.delete(`http://localhost:5000/api/lostfound/${id}`, authHeaders);
       fetchItems();
     } catch (err) {
       console.error(err);
-    }
-  };
-
-  const handleEdit = (item) => {
-    setEditItem(item);
-    setForm({
-      item_name: item.item_name,
-      description: item.description,
-      date_found: item.date_found,
-      location: item.location,
-      claimed: item.claimed,
-    });
-  };
-
-  const handleSaveEdit = async () => {
-    try {
-      await axios.put(`http://localhost:5000/api/lostfound/${editItem.id}`, form);
-      setEditItem(null);
-      setForm({ item_name: "", description: "", date_found: "", location: "", claimed: false });
-      fetchItems();
-    } catch (err) {
-      console.error(err);
+      alert("Failed to delete item");
     }
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold text-orange-600 mb-4">Lost & Found Management</h1>
-
+    <>
       <button
         onClick={() => setShowAddForm(!showAddForm)}
         className="mb-4 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
@@ -90,10 +74,7 @@ const LostFound = () => {
       </button>
 
       {showAddForm && (
-        <form
-          onSubmit={handleSubmit}
-          className="mb-6 space-y-4 bg-orange-50 p-5 rounded-2xl shadow-md border border-orange-200"
-        >
+        <form onSubmit={handleSubmit} className="mb-6 space-y-4 bg-orange-50 p-5 rounded-2xl shadow-md border border-orange-200">
           <input
             type="text"
             name="item_name"
@@ -147,11 +128,11 @@ const LostFound = () => {
         </form>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white shadow-md rounded">
-          <thead>
-            <tr className="bg-gray-200 text-left">
-              <th className="p-3">Item Name</th>
+      <div className="overflow-x-auto bg-white rounded shadow-md">
+        <table className="min-w-full">
+          <thead className="bg-gray-200 text-left">
+            <tr>
+              <th className="p-3">Item</th>
               <th className="p-3">Description</th>
               <th className="p-3">Date Found</th>
               <th className="p-3">Location</th>
@@ -163,7 +144,7 @@ const LostFound = () => {
             {items.length === 0 ? (
               <tr>
                 <td colSpan="6" className="p-3 text-center">
-                  No lost & found items.
+                  No items found
                 </td>
               </tr>
             ) : (
@@ -176,7 +157,11 @@ const LostFound = () => {
                   <td className="p-3">{item.claimed ? "Yes" : "No"}</td>
                   <td className="p-3 flex gap-2">
                     <button
-                      onClick={() => handleEdit(item)}
+                      onClick={() => {
+                        setEditItem(item);
+                        setForm(item);
+                        setShowAddForm(true);
+                      }}
                       className="px-4 py-2 border border-orange-500 text-orange-500 bg-white rounded-2xl hover:bg-orange-50 transition"
                     >
                       Edit
@@ -194,80 +179,7 @@ const LostFound = () => {
           </tbody>
         </table>
       </div>
-
-      
-      {editItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-2xl shadow-md w-full max-w-md">
-            <h2 className="text-2xl font-bold text-orange-600 mb-4">Edit Item</h2>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSaveEdit();
-              }}
-              className="space-y-3"
-            >
-              <input
-                type="text"
-                name="item_name"
-                value={form.item_name}
-                onChange={handleChange}
-                className="w-full border border-orange-300 rounded px-3 py-2"
-                required
-              />
-              <textarea
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                className="w-full border border-orange-300 rounded px-3 py-2"
-                required
-              />
-              <input
-                type="date"
-                name="date_found"
-                value={form.date_found}
-                onChange={handleChange}
-                className="w-full border border-orange-300 rounded px-3 py-2"
-                required
-              />
-              <input
-                type="text"
-                name="location"
-                value={form.location}
-                onChange={handleChange}
-                className="w-full border border-orange-300 rounded px-3 py-2"
-                required
-              />
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  name="claimed"
-                  checked={form.claimed}
-                  onChange={handleChange}
-                  className="w-4 h-4"
-                />
-                Claimed
-              </label>
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditItem(null)}
-                  className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition"
-                >
-                  Save
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
+    </>
   );
 };
 

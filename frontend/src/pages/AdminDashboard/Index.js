@@ -1,77 +1,68 @@
-import React, { useState } from "react";
-import Users from "./Users";
-import Rooms from "./Rooms";
-import Hotels from "./Hotels";
-import Bookings from "./Bookings";
-import Profile from "./Profile";
-import Navbar from "../../components/Navbar";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import AdminLayout from "../../components/AdminLayout";
+import SummaryCard from "../../components/SummaryCard";
+import QuickActionButton from "../../components/QuickActionButton";
+import { useNavigate } from "react-router-dom";
 
-const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState("users");
+export default function AdminDashboard() {
+  const [users, setUsers] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const token = localStorage.getItem("token");
+  const navigate = useNavigate();
 
-  const renderTab = () => {
-    switch (activeTab) {
-      case "users":
-        return <Users />;
-      case "rooms":
-        return <Rooms />;
-      case "hotels":
-        return <Hotels />;
-      case "bookings":
-        return <Bookings />;
-      case "profile":
-        return <Profile />;
-      default:
-        return <Users />;
-    }
-  };
+  const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
 
-  const menuButton = (tab, label) => (
-    <button
-      onClick={() => setActiveTab(tab)}
-      className={`w-full text-left px-4 py-3 rounded-lg transition font-medium
-        ${
-          activeTab === tab
-            ? "bg-orange-500 text-white"
-            : "text-gray-300 hover:bg-gray-700"
-        }`}
-    >
-      {label}
-    </button>
-  );
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [usersRes, bookingsRes, roomsRes] = await Promise.all([
+          axios.get("http://localhost:5000/api/users", authHeaders),
+          axios.get("http://localhost:5000/api/bookings", authHeaders),
+          axios.get("http://localhost:5000/api/rooms", authHeaders),
+        ]);
+
+        setUsers(usersRes.data);
+        setBookings(bookingsRes.data);
+        setRooms(roomsRes.data);
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const today = new Date().toISOString().split("T")[0]; 
+  const totalBookingsToday = bookings.filter(b => b.date?.startsWith(today)).length;
+  const totalRevenueToday = bookings
+    .filter(b => b.date?.startsWith(today) && b.status === "confirmed")
+    .reduce((sum, b) => sum + Number(b.price || 0), 0);
+  const registeredUsers = users.filter(u => u.role === "user").length;
+  const totalEmployees = users.filter(u => u.role === "employee").length;
+  const availableRooms = rooms.length;
+  const pendingApprovals = bookings.filter(b => b.status === "pending").length;
 
   return (
-    <div className="min-h-screen bg-gray-100 font-sans">
-      <Navbar />
+    <AdminLayout>
+      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
 
-      <div className="flex pt-20">
-        <aside className="w-64 bg-gray-900 min-h-screen p-6">
-          <h2 className="text-2xl font-bold text-orange-500 mb-8">
-            Admin Panel
-          </h2>
-
-          <nav className="space-y-2">
-            {menuButton("users", "Users")}
-            {menuButton("hotels", "Hotels")}
-            {menuButton("rooms", "Rooms")}
-            {menuButton("bookings", "Bookings")}
-            {menuButton("profile", "Profile")}
-          </nav>
-        </aside>
-
-        <main className="flex-1 p-8">
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h1 className="text-3xl font-bold text-gray-800 mb-6">
-              {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
-            </h1>
-
-            {renderTab()}
-          </div>
-        </main>
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-10">
+        <SummaryCard title="Total Bookings Today" value={totalBookingsToday} />
+        <SummaryCard title="Total Revenue Today" value={`$${totalRevenueToday}`} />
+        <SummaryCard title="Registered Users" value={registeredUsers} />
+        <SummaryCard title="Employees" value={totalEmployees} />
+        <SummaryCard title="Available Rooms" value={availableRooms} />
+        <SummaryCard title="Pending Approvals" value={pendingApprovals} />
       </div>
-    </div>
-  );
-};
 
-export default AdminDashboard;
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <QuickActionButton title="Add Room" onClick={() => navigate("/admin/rooms")} />
+        <QuickActionButton title="Manage Bookings" onClick={() => navigate("/admin/bookings")} />
+        <QuickActionButton title="See Employees" onClick={() => navigate("/admin/employees")} />
+      </div>
+    </AdminLayout>
+  );
+}
 

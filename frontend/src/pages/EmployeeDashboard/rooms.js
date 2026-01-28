@@ -1,208 +1,147 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import RoomCard from "../../components/RoomCard";
-
-const API_URL = "http://localhost:5000/api/rooms";
 
 const Rooms = () => {
-  const [rooms, setRooms] = useState([]);
-  const [editingId, setEditingId] = useState(null);
-
-  const [formData, setFormData] = useState({
-    hotel_id: "",
-    room_name: "",
-    room_number: "",
-    description: "",
-    price: "",
-    capacity: "",
-    images: [],
-  });
-
   const token = localStorage.getItem("token");
 
-  const axiosInstance = axios.create({
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  // Fetch rooms from backend
-  const fetchRooms = async () => {
-    try {
-      const res = await axios.get(API_URL);
-      setRooms(res.data);
-    } catch (error) {
-      console.error("Fetch rooms error:", error.response?.data || error.message);
-    }
-  };
+  const [rooms, setRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    fetchRooms();
-  }, []);
+    if (!token) return;
 
-  
-  const handleChange = (e) => {
-  setFormData({ ...formData, [e.target.name]: e.target.value });
-};
-
-const handleFileChange = (e) => {
-  setFormData((prev) => ({
-    ...prev,
-    images: [...prev.images, ...Array.from(e.target.files)],
-  }));
-};
-
-
-  const resetForm = () => {
-    setEditingId(null);
-    setFormData({
-      hotel_id: "",
-      room_name: "",
-      room_number: "",
-      description: "",
-      price: "",
-      capacity: "",
-      images: [],
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const data = new FormData();
-    Object.keys(formData).forEach((key) => {
-      if (key !== "images") data.append(key, formData[key]);
-    });
-
-    for (let i = 0; i < formData.images.length; i++) {
-      data.append("images", formData.images[i]);
-    }
-
-    try {
-      if (editingId) {
-        await axiosInstance.put(`${API_URL}/${editingId}`, data, {
-          headers: { "Content-Type": "multipart/form-data" },
+    const fetchRooms = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get("http://localhost:5000/api/rooms", {
+          headers: { Authorization: `Bearer ${token}` },
         });
-      } else {
-        await axiosInstance.post(API_URL, data, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        setRooms(res.data || []);
+        setError(null);
+      } catch (err) {
+        console.error(err.response?.data || err.message);
+        setError(err.response?.data?.message || "Failed to load rooms");
+      } finally {
+        setLoading(false);
       }
+    };
 
-      resetForm();
-      fetchRooms();
-    } catch (error) {
-      console.error("Submit room error:", error.response?.data || error.message);
-      alert(error.response?.data?.error || "Action failed");
-    }
-console.log("IMAGES COUNT:", formData.images.length);
+    fetchRooms();
+  }, [token]);
 
-
-  };
-
-  const handleEdit = (room) => {
-    setEditingId(room.id);
-    setFormData({
-      hotel_id: room.hotel_id,
-      room_name: room.room_name,
-      room_number: room.room_number,
-      description: room.description,
-      price: room.price,
-      capacity: room.capacity,
-      images: [],
+  const filteredRooms = useMemo(() => {
+    if (!searchTerm.trim()) return rooms;
+    return rooms.filter((room) => {
+      const search = searchTerm.toLowerCase();
+      return (
+        room.room_name?.toLowerCase().includes(search) ||
+        room.room_number?.toLowerCase().includes(search) ||
+        room.description?.toLowerCase().includes(search)
+      );
     });
-  };
+  }, [rooms, searchTerm]);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this room?")) return;
+  const totalCapacity = useMemo(
+    () => filteredRooms.reduce((sum, room) => sum + (Number(room.capacity) || 0), 0),
+    [filteredRooms]
+  );
 
-    try {
-      await axiosInstance.delete(`${API_URL}/${id}`);
-      setRooms(rooms.filter((room) => room.id !== id));
-    } catch (error) {
-      console.error("Delete error:", error.response?.data || error.message);
-      alert(error.response?.data?.error || "Not authorized");
-    }
-  };
+  if (!token) {
+    return <p className="text-red-500">You must be logged in to view rooms.</p>;
+  }
+
+  if (loading) {
+    return <p className="text-gray-500">Loading rooms…</p>;
+  }
+
+  if (error) {
+    return <p className="text-red-500">{error}</p>;
+  }
+
+  if (!filteredRooms.length) {
+    return (
+      <div className="space-y-4">
+        <RoomsToolbar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+        <p className="text-gray-500">No rooms match your search.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-10">
-      
-      <form onSubmit={handleSubmit} className="bg-gray-50 p-6 rounded-xl space-y-4">
-        <h2 className="text-xl font-semibold">{editingId ? "Edit Room" : "Add Room"}</h2>
+    <div className="space-y-6">
+      <RoomsToolbar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <input
-            name="hotel_id"
-            placeholder="Hotel ID"
-            value={formData.hotel_id}
-            onChange={handleChange}
-            className="border rounded px-3 py-2"
-          />
-          <input
-            name="room_name"
-            placeholder="Room Name"
-            value={formData.room_name}
-            onChange={handleChange}
-            className="border rounded px-3 py-2"
-          />
-          <input
-            name="room_number"
-            placeholder="Room Number"
-            value={formData.room_number}
-            onChange={handleChange}
-            className="border rounded px-3 py-2"
-          />
-          <input
-            name="price"
-            type="number"
-            placeholder="Price"
-            value={formData.price}
-            onChange={handleChange}
-            className="border rounded px-3 py-2"
-          />
-          <input
-            name="capacity"
-            type="number"
-            placeholder="Capacity"
-            value={formData.capacity}
-            onChange={handleChange}
-            className="border rounded px-3 py-2"
-          />
-          <input type="file" multiple accept="image/*" onChange={handleFileChange} />
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <SummaryCardE title="Total Rooms" value={filteredRooms.length} />
+        <SummaryCardE title="Total Capacity" value={totalCapacity} />
+      </div>
 
-        <textarea
-          name="description"
-          placeholder="Description"
-          value={formData.description}
-          onChange={handleChange}
-          className="w-full border rounded px-3 py-2"
-        />
-
-        <button className="bg-orange-500 text-white px-6 py-2 rounded">
-          {editingId ? "Update" : "Create"}
-        </button>
-      </form>
-
-     
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {rooms.length > 0 ? (
-          rooms.map((room) => (
-            <RoomCard
-              key={room.id}
-              room={room}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              isAdmin={true} 
-            />
-          ))
-        ) : (
-          <p className="text-center col-span-full text-gray-500">No rooms found</p>
-        )}
+      <div className="overflow-x-auto bg-white shadow rounded-lg">
+        <table className="min-w-full text-left">
+          <thead className="bg-gray-50 text-gray-500 uppercase text-sm">
+            <tr>
+              <th className="p-4">Room</th>
+              <th className="p-4">Number</th>
+              <th className="p-4">Capacity</th>
+              <th className="p-4">Price</th>
+              <th className="p-4">Description</th>
+              <th className="p-4">Images</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {filteredRooms.map((room) => (
+              <tr key={room.id} className="hover:bg-gray-50 text-sm">
+                <td className="p-4 font-medium text-gray-900">{room.room_name || "—"}</td>
+                <td className="p-4 text-gray-700">{room.room_number || "—"}</td>
+                <td className="p-4 text-gray-700">{room.capacity || "—"}</td>
+                <td className="p-4 text-gray-700">${Number(room.price || 0).toFixed(2)}</td>
+                <td className="p-4 text-gray-500 max-w-xs">{room.description || "No description"}</td>
+                <td className="p-4">
+                  <div className="flex gap-2 flex-wrap">
+                    {room.images?.length ? (
+                      room.images.map((imgUrl, idx) => (
+                        <img
+                          key={`${room.id}-img-${idx}`}
+                          src={imgUrl}
+                          alt={`${room.room_name || "Room"} ${idx + 1}`}
+                          className="w-14 h-14 rounded object-cover border"
+                        />
+                      ))
+                    ) : (
+                      <span className="text-gray-400">No images</span>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 };
+
+const RoomsToolbar = ({ searchTerm, setSearchTerm }) => (
+  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <h2 className="text-2xl font-semibold text-gray-800">Rooms</h2>
+    <input
+      type="text"
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      placeholder="Search by name, number, or description"
+      className="w-full md:w-80 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+    />
+  </div>
+);
+
+// Reuse summary card styling from employee dashboard without importing to avoid circular deps
+const SummaryCardE = ({ title, value }) => (
+  <div className="bg-white rounded-lg shadow p-4">
+    <p className="text-sm text-gray-500">{title}</p>
+    <p className="text-2xl font-semibold text-gray-900">{value}</p>
+  </div>
+);
 
 export default Rooms;

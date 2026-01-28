@@ -38,11 +38,6 @@ export default function UserNavbar({ setRole }) {
             </Link>
           </li>
           <li>
-            <Link to="/user/lostfound" className="hover:text-orange-500 transition">
-              Lost & Found
-            </Link>
-          </li>
-          <li>
             <Link to="/user/profile" className="hover:text-orange-500 transition">
               Profile
             </Link>
