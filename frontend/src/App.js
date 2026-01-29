@@ -23,6 +23,7 @@ import Employees from "./pages/AdminDashboard/Employees";
 import Rooms from "./pages/AdminDashboard/Rooms";
 import Bookings from "./pages/AdminDashboard/Bookings";
 import HotelsAdmin from "./pages/AdminDashboard/Hotels";
+import PromoCodes from "./pages/AdminDashboard/PromoCodes";
 import ProfileAdmin from "./pages/AdminDashboard/Profile";
 
 import EmployeeLayout from "./components/EmployeeLayout";
@@ -99,6 +100,14 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={["admin"]}>
                   <Bookings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/promo-codes"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <PromoCodes />
                 </ProtectedRoute>
               }
             />

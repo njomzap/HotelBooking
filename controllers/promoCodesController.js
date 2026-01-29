@@ -61,6 +61,27 @@ const validatePayload = ({
   }
 };
 
+exports.getActivePromoCodes = async (req, res) => {
+  try {
+    const today = new Date();
+    const formattedDate = today.toISOString().split("T")[0];
+    const [rows] = await db.query(
+      `SELECT *
+       FROM promo_codes
+       WHERE active = 1
+         AND start_date <= ?
+         AND end_date >= ?
+       ORDER BY start_date ASC`,
+      [formattedDate, formattedDate]
+    );
+
+    res.json(rows.map(normalizeRow));
+  } catch (err) {
+    console.error("GET ACTIVE PROMO CODES ERROR:", err);
+    res.status(500).json({ message: "Failed to load promo codes" });
+  }
+};
+
 exports.getAllPromoCodes = async (req, res) => {
   try {
     const [rows] = await db.query("SELECT * FROM promo_codes ORDER BY created_at DESC");

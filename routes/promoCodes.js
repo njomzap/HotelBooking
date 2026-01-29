@@ -8,6 +8,7 @@ const {
   updatePromoCode,
   deletePromoCode,
   applyPromoCode,
+  getActivePromoCodes,
 } = require("../controllers/promoCodesController");
 
 const {
@@ -16,7 +17,6 @@ const {
   requireAnyRole,
 } = require("../middlewares/auth");
 
-// Admin & Employee can view list/details
 router.get(
   "/",
   authMiddleware,
@@ -31,7 +31,6 @@ router.get(
   getPromoCodeById
 );
 
-// Admin-only mutation routes
 router.post(
   "/",
   authMiddleware,
@@ -53,12 +52,13 @@ router.delete(
   deletePromoCode
 );
 
-// Apply endpoint for any logged-in user type
 router.post(
   "/apply",
   authMiddleware,
   requireAnyRole(["admin", "employee", "user"]),
   applyPromoCode
 );
+
+router.get("/public/active", getActivePromoCodes);
 
 module.exports = router;

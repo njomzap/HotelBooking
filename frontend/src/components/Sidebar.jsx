@@ -11,6 +11,7 @@ export default function Sidebar() {
     { name: "Hotels", path: "/admin/hotels" },
     { name: "Rooms", path: "/admin/rooms" },
     { name: "Bookings", path: "/admin/bookings" },
+    { name: "Promo Codes", path: "/admin/promo-codes" },
     { name: "Profile", path: "/admin/profile" },
   ];
 

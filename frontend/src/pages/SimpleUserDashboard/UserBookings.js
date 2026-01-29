@@ -103,7 +103,7 @@ const UserBookings = () => {
     <div
       style={{
         maxWidth: "900px",
-        margin: "3rem auto",
+        margin: "5rem auto 3rem",
         fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
       }}
     >
