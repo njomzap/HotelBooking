@@ -1,17 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { Calendar, MapPin, DollarSign, Edit, X, CreditCard, Clock, User, Home } from "lucide-react";
 
 const BOOKINGS_API = "http://localhost:5000/api/bookings";
 const PAYMENTS_API = "http://localhost:5000/api/payments";
-
-const statusColors = {
-  pending: "#FFA500",
-  pending_payment: "#FF8C00",
-  confirmed: "#FF7A33",
-  cancelled: "#FF6347",
-  completed: "#FF4500",
-  paid: "#FF7A33",
-};
 
 const UserBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -25,8 +17,18 @@ const UserBookings = () => {
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    fetchBookings();
-    // eslint-disable-next-line
+    console.log("=== USERBOOKINGS COMPONENT MOUNTED ===");
+    console.log("Token available:", !!token);
+    console.log("Token type:", typeof token);
+    console.log("Token length:", token?.length);
+    
+    if (token && token.trim() !== "") {
+      fetchBookings();
+    } else {
+      console.log("No valid token found, skipping booking fetch");
+      setError("Please login to view your bookings");
+      setLoading(false);
+    }
   }, []);
 
   const fetchBookings = async () => {
@@ -96,241 +98,303 @@ const UserBookings = () => {
     }
   };
 
-  if (loading) return <p>Loading bookings...</p>;
-  if (error) return <p>{error}</p>;
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "pending": return "bg-yellow-100 text-yellow-700 border-yellow-200";
+      case "pending_payment": return "bg-orange-100 text-orange-700 border-orange-200";
+      case "confirmed": return "bg-green-100 text-green-700 border-green-200";
+      case "cancelled": return "bg-red-100 text-red-700 border-red-200";
+      case "completed": return "bg-blue-100 text-blue-700 border-blue-200";
+      case "paid": return "bg-green-100 text-green-700 border-green-200";
+      default: return "bg-gray-100 text-gray-700 border-gray-200";
+    }
+  };
+
+  const getPaymentStatusColor = (status) => {
+    switch (status) {
+      case "pending": return "bg-yellow-100 text-yellow-700 border-yellow-200";
+      case "completed": return "bg-green-100 text-green-700 border-green-200";
+      case "failed": return "bg-red-100 text-red-700 border-red-200";
+      default: return "bg-gray-100 text-gray-700 border-gray-200";
+    }
+  };
+
+  if (loading) return (
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+        <p className="text-lg text-gray-600 font-medium">Loading your bookings...</p>
+      </div>
+    </div>
+  );
+  
+  if (error) return (
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <X className="w-10 h-10 text-red-600" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">Something went wrong</h3>
+        <p className="text-gray-600">{error}</p>
+      </div>
+    </div>
+  );
 
   return (
-    <div
-      style={{
-        maxWidth: "900px",
-        margin: "5rem auto 3rem",
-        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-      }}
-    >
-      <h2
-        style={{
-          textAlign: "center",
-          marginBottom: "2.5rem",
-          fontSize: "2.2rem",
-          color: "#FF7A33",
-          fontWeight: "700",
-        }}
-      >
-        My Bookings
-      </h2>
-
-      {bookings.length === 0 && (
-        <p style={{ textAlign: "center", color: "#777" }}>No bookings found.</p>
-      )}
-
-      {bookings.map((booking) => {
-        // Fallbacks for missing fields
-        const status = booking.status || "pending";
-        const paymentStatus = booking.payment_status || "pending";
-        const hotelName = booking.hotel_name || "Hotel";
-        const roomName = booking.room_name || "Room";
-        const totalPrice = booking.total_price ?? 0;
-        const checkIn = booking.check_in?.slice(0, 10) || "N/A";
-        const checkOut = booking.check_out?.slice(0, 10) || "N/A";
-
-        return (
-          <div
-            key={booking.id}
-            style={{
-              borderRadius: "16px",
-              padding: "1.8rem",
-              marginBottom: "1.8rem",
-              boxShadow: "0 6px 20px rgba(255,165,0,0.1)",
-              transition: "transform 0.3s, box-shadow 0.3s",
-              backgroundColor: "#fff",
-              borderLeft: `5px solid ${statusColors[status] || "#FFA500"}`,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-6px)";
-              e.currentTarget.style.boxShadow = "0 12px 30px rgba(255,165,0,0.15)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "0 6px 20px rgba(255,165,0,0.1)";
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "0.8rem",
-              }}
-            >
-              <h3 style={{ fontSize: "1.4rem", fontWeight: "600", color: "#FF7A33" }}>
-                {hotelName} — {roomName}
-              </h3>
-
-              <span
-                style={{
-                  padding: "0.3rem 0.8rem",
-                  borderRadius: "20px",
-                  fontWeight: "600",
-                  fontSize: "0.85rem",
-                  color: "#fff",
-                  backgroundColor: statusColors[status] || "#FFA500",
-                }}
-              >
-                {status}
-              </span>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
+      {/* Navigation */}
+      <nav className="bg-white shadow-sm border-b border-orange-100">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-8">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
+                  <Home className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-bold text-gray-900">HotelBooking</span>
+              </div>
+              
+              <div className="hidden md:flex items-center gap-6">
+                <a href="/catalogue" className="text-gray-600 hover:text-orange-600 font-medium transition-colors">
+                  Hotels
+                </a>
+                <a href="/user-dashboard" className="text-gray-600 hover:text-orange-600 font-medium transition-colors">
+                  Dashboard
+                </a>
+                <a href="/user-bookings" className="text-orange-600 font-medium border-b-2 border-orange-600 pb-4">
+                  My Bookings
+                </a>
+              </div>
             </div>
-
-            {editingId === booking.id ? (
-              <div style={{ marginTop: "1rem" }}>
-                <label>
-                  Check-in:
-                  <input
-                    type="date"
-                    value={editCheckIn}
-                    onChange={(e) => setEditCheckIn(e.target.value)}
-                    style={{
-                      marginLeft: "0.5rem",
-                      padding: "0.4rem",
-                      borderRadius: "8px",
-                      border: "1px solid #FFB366",
-                    }}
-                  />
-                </label>
-                <label style={{ marginLeft: "1rem" }}>
-                  Check-out:
-                  <input
-                    type="date"
-                    value={editCheckOut}
-                    onChange={(e) => setEditCheckOut(e.target.value)}
-                    style={{
-                      marginLeft: "0.5rem",
-                      padding: "0.4rem",
-                      borderRadius: "8px",
-                      border: "1px solid #FFB366",
-                    }}
-                  />
-                </label>
-
-                <div style={{ marginTop: "1rem" }}>
-                  <button
-                    onClick={() => saveEdit(booking.id)}
-                    disabled={saving}
-                    style={{
-                      padding: "0.5rem 1rem",
-                      marginRight: "0.6rem",
-                      backgroundColor: "#FF7A33",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "12px",
-                      cursor: "pointer",
-                      fontWeight: "600",
-                    }}
-                  >
-                    {saving ? "Saving..." : "Save"}
-                  </button>
-                  <button
-                    onClick={cancelEdit}
-                    disabled={saving}
-                    style={{
-                      padding: "0.5rem 1rem",
-                      backgroundColor: "#FF4500",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "12px",
-                      cursor: "pointer",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Cancel
-                  </button>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-orange-600" />
                 </div>
+                <span className="text-sm font-medium text-gray-700">User</span>
               </div>
-            ) : (
-              <div style={{ marginTop: "1rem", color: "#555" }}>
-                <p>
-                  <strong>Dates:</strong> {checkIn} → {checkOut}
-                </p>
-                <p>
-                  <strong>Total:</strong> €{totalPrice}
-                </p>
-                <p>
-                  <strong>Payment Status:</strong>{" "}
-                  <span
-                    style={{
-                      padding: "0.3rem 0.8rem",
-                      borderRadius: "20px",
-                      color: "#fff",
-                      backgroundColor: statusColors[paymentStatus] || "#FFA500",
-                      fontWeight: "600",
-                      fontSize: "0.85rem",
-                    }}
-                  >
-                    {paymentStatus}
-                  </span>
-                </p>
-
-                <div style={{ marginTop: "1rem" }}>
-                  {status !== "cancelled" && (
-                    <>
-                      <button
-                        onClick={() => startEdit(booking)}
-                        disabled={status !== "pending_payment"}
-                        style={{
-                          padding: "0.45rem 1rem",
-                          marginRight: "0.5rem",
-                          backgroundColor: "#FFB366",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: "12px",
-                          cursor: status !== "pending_payment" ? "not-allowed" : "pointer",
-                          opacity: status !== "pending_payment" ? 0.6 : 1,
-                          fontWeight: "600",
-                        }}
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        onClick={() => cancelBooking(booking.id)}
-                        style={{
-                          padding: "0.45rem 1rem",
-                          marginRight: "0.5rem",
-                          backgroundColor: "#FF7A33",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: "12px",
-                          cursor: "pointer",
-                          fontWeight: "600",
-                        }}
-                      >
-                        Cancel
-                      </button>
-
-                      {status === "pending_payment" && (
-                        <button
-                          onClick={() => handlePayment(booking.id)}
-                          style={{
-                            padding: "0.5rem 1.2rem",
-                            backgroundColor: "#FF4500",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: "14px",
-                            cursor: "pointer",
-                            fontWeight: "700",
-                            boxShadow: "0 4px 15px rgba(255,69,0,0.3)",
-                          }}
-                        >
-                          Pay Now
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
+              <button
+                onClick={() => {
+                  localStorage.removeItem("token");
+                  localStorage.removeItem("role");
+                  window.location.href = "/login";
+                }}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
+              >
+                Logout
+              </button>
+            </div>
           </div>
-        );
-      })}
+        </div>
+      </nav>
+
+      {/* Mobile Navigation */}
+      <div className="md:hidden bg-white border-b border-orange-100 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+              <Home className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-sm font-bold text-gray-900">My Bookings</span>
+          </div>
+          <button
+            onClick={() => {
+              localStorage.removeItem("token");
+              localStorage.removeItem("role");
+              window.location.href = "/login";
+            }}
+            className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors text-xs font-medium"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+
+      {/* Page Header */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="bg-white rounded-2xl shadow-lg border border-orange-100 p-8">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center">
+              <Calendar className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900">My Bookings</h1>
+              <p className="text-lg text-gray-600">Manage your hotel reservations</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 pb-8">
+        {bookings.length === 0 ? (
+          <div className="bg-white rounded-2xl shadow-lg border border-orange-100 p-16 text-center">
+            <div className="w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Calendar className="w-12 h-12 text-orange-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">No bookings found</h3>
+            <p className="text-lg text-gray-600 mb-6">You haven't made any reservations yet</p>
+            <a
+              href="/catalogue"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all font-medium"
+            >
+              <Home className="w-5 h-5" />
+              Browse Hotels
+            </a>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {bookings.map((booking) => {
+              const status = booking.status || "pending";
+              const paymentStatus = booking.payment_status || "pending";
+              const hotelName = booking.hotel_name || "Hotel";
+              const roomName = booking.room_name || "Room";
+              const totalPrice = booking.total_price ?? 0;
+              const checkIn = booking.check_in?.slice(0, 10) || "N/A";
+              const checkOut = booking.check_out?.slice(0, 10) || "N/A";
+
+              return (
+                <div
+                  key={booking.id}
+                  className="bg-white rounded-2xl shadow-lg border border-orange-100 overflow-hidden hover:shadow-xl transition-all duration-300"
+                >
+                  {/* Header */}
+                  <div className="p-6 border-b border-gray-100">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                          {hotelName}
+                        </h3>
+                        <p className="text-lg text-gray-600 flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-gray-400" />
+                          {roomName}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <span className={`px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(status)}`}>
+                          Booking Status: {status}
+                        </span>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getPaymentStatusColor(paymentStatus)}`}>
+                          Payment Status: {paymentStatus}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-6">
+                    {editingId === booking.id ? (
+                      <div className="space-y-6">
+                        <div className="bg-amber-50 rounded-xl p-4 border border-orange-200">
+                          <h4 className="text-lg font-semibold text-gray-900 mb-4">Edit Booking Dates</h4>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Check-in</label>
+                              <input
+                                type="date"
+                                value={editCheckIn}
+                                onChange={(e) => setEditCheckIn(e.target.value)}
+                                className="w-full px-4 py-3 border border-orange-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Check-out</label>
+                              <input
+                                type="date"
+                                value={editCheckOut}
+                                onChange={(e) => setEditCheckOut(e.target.value)}
+                                className="w-full px-4 py-3 border border-orange-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => saveEdit(booking.id)}
+                            disabled={saving}
+                            className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all disabled:opacity-50 font-medium"
+                          >
+                            {saving ? "Saving..." : "Save Changes"}
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            disabled={saving}
+                            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 font-medium"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        {/* Booking Details */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
+                            <div className="flex items-center gap-3 mb-2">
+                              <Calendar className="w-5 h-5 text-orange-600" />
+                              <span className="font-medium text-gray-900">Check-in</span>
+                            </div>
+                            <p className="text-lg font-semibold text-gray-900">{checkIn}</p>
+                          </div>
+                          <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
+                            <div className="flex items-center gap-3 mb-2">
+                              <Calendar className="w-5 h-5 text-orange-600" />
+                              <span className="font-medium text-gray-900">Check-out</span>
+                            </div>
+                            <p className="text-lg font-semibold text-gray-900">{checkOut}</p>
+                          </div>
+                          <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                            <div className="flex items-center gap-3 mb-2">
+                              <DollarSign className="w-5 h-5 text-green-600" />
+                              <span className="font-medium text-gray-900">Total</span>
+                            </div>
+                            <p className="text-2xl font-bold text-green-900">${totalPrice}</p>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex flex-wrap gap-3">
+                          {status !== "cancelled" && (
+                            <>
+                              <button
+                                onClick={() => startEdit(booking)}
+                                disabled={status !== "pending_payment"}
+                                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2"
+                              >
+                                <Edit className="w-4 h-4" />
+                                Edit
+                              </button>
+
+                              <button
+                                onClick={() => cancelBooking(booking.id)}
+                                className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors font-medium"
+                              >
+                                Cancel
+                              </button>
+
+                              {status === "pending_payment" && (
+                                <button
+                                  onClick={() => handlePayment(booking.id)}
+                                  className="px-6 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all font-medium flex items-center gap-2"
+                                >
+                                  <CreditCard className="w-4 h-4" />
+                                  Pay Now
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
