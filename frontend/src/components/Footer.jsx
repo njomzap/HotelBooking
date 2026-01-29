@@ -6,7 +6,7 @@ export default function Footer() {
   const isLoggedIn = !!localStorage.getItem("token");
 
   return (
-    <footer className="bg-[#1f2a37] text-gray-300 py-14 mt-20">
+    <footer className="bg-[#1f2a37] text-gray-300 py-14">
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-10 md:items-start md:justify-between">
 
         {/* Column 1 — Logo & Description */}

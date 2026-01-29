@@ -33,15 +33,6 @@ export default function EmployeeLayout() {
       {/* SIDEBAR */}
       <div className="flex flex-col w-64 bg-white border-r">
         <EmployeeSidebar />
-
-        <div className="mt-auto p-4 border-t">
-          <button
-            onClick={handleLogout}
-            className="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded"
-          >
-            Logout
-          </button>
-        </div>
       </div>
 
       {/* CONTENT AREA */}

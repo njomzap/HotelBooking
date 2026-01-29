@@ -21,6 +21,7 @@ export default function Login({ setRole }) {
 
       // Store access token in localStorage (short-lived)
       localStorage.setItem("accessToken", res.data.accessToken);
+      localStorage.setItem("token", res.data.accessToken);
       localStorage.setItem("role", res.data.role);
       localStorage.setItem("userId", res.data.id);
 

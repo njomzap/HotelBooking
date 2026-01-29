@@ -94,79 +94,90 @@ export default function Profile() {
   if (loading) return <p className="text-center mt-12 text-gray-600">Loading profile...</p>;
 
   return (
-    <div className="max-w-3xl mx-auto mt-24 space-y-10 p-6">
-      <h1 className="text-3xl font-bold text-gray-800 text-center">My Profile</h1>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 py-16 px-4">
+      <div className="max-w-5xl mx-auto space-y-10">
+        <h1 className="text-3xl font-semibold text-gray-900 text-center">
+          {currentUsername ? `${currentUsername}'s Profile` : "Profile"}
+        </h1>
 
-      {/* Username Card */}
-      <div className="bg-white rounded-xl shadow-md p-6 space-y-4 border border-gray-200">
-        <h2 className="text-xl font-semibold text-orange-500">Update Username</h2>
-        <div className="flex flex-col md:flex-row gap-4 items-center">
-          <input
-            type="text"
-            value={currentUsername}
-            disabled
-            className="w-full md:flex-1 border rounded-lg px-4 py-2 bg-gray-100 cursor-not-allowed"
-          />
-          <input
-            type="text"
-            value={newUsername}
-            onChange={(e) => setNewUsername(e.target.value)}
-            placeholder="Enter new username"
-            className="w-full md:flex-1 border rounded-lg px-4 py-2"
-          />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-2xl shadow p-6 space-y-4 border border-orange-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-semibold">UN</div>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Update username</h2>
+                <p className="text-sm text-gray-500">Choose a new display name for your bookings.</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <input
+                type="text"
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                placeholder="Enter new username"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+              />
+              <button
+                onClick={updateUsername}
+                className="px-5 py-2 rounded-xl bg-orange-500 text-white font-semibold hover:bg-orange-600"
+              >
+                Save changes
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow p-6 space-y-4 border border-orange-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-semibold">PW</div>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Change password</h2>
+                <p className="text-sm text-gray-500">Add a strong new password to keep your account safe.</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <input
+                type="password"
+                placeholder="Current password"
+                value={passwords.currentPassword}
+                onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+              />
+              <input
+                type="password"
+                placeholder="New password"
+                value={passwords.newPassword}
+                onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+              />
+              <input
+                type="password"
+                placeholder="Confirm new password"
+                value={passwords.confirmPassword}
+                onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+              />
+              <button
+                onClick={updatePassword}
+                className="px-5 py-2 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800"
+              >
+                Update password
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow p-6 border border-red-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-red-600">Delete account</h2>
+            <p className="text-sm text-gray-500">Your bookings history will be removed permanently.</p>
+          </div>
           <button
-            onClick={updateUsername}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition"
+            onClick={deleteAccount}
+            className="px-5 py-2 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600"
           >
-            Save
+            Delete my account
           </button>
         </div>
-      </div>
-
-      {/* Password Card */}
-      <div className="bg-white rounded-xl shadow-md p-6 space-y-4 border border-gray-200">
-        <h2 className="text-xl font-semibold text-orange-500">Change Password</h2>
-        <div className="flex flex-col gap-3">
-          <input
-            type="password"
-            placeholder="Current password"
-            value={passwords.currentPassword}
-            onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
-            className="w-full border rounded-lg px-4 py-2"
-          />
-          <input
-            type="password"
-            placeholder="New password"
-            value={passwords.newPassword}
-            onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
-            className="w-full border rounded-lg px-4 py-2"
-          />
-          <input
-            type="password"
-            placeholder="Confirm new password"
-            value={passwords.confirmPassword}
-            onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
-            className="w-full border rounded-lg px-4 py-2"
-          />
-          <button
-            onClick={updatePassword}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition mt-2"
-          >
-            Update Password
-          </button>
-        </div>
-      </div>
-
-      {/* Delete Account Card */}
-      <div className="bg-white rounded-xl shadow-md p-6 space-y-3 border border-gray-200">
-        <h2 className="text-xl font-semibold text-red-500">Delete Account</h2>
-        <p className="text-gray-600">This action is permanent and cannot be undone.</p>
-        <button
-          onClick={deleteAccount}
-          className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition"
-        >
-          Delete My Account
-        </button>
       </div>
     </div>
   );

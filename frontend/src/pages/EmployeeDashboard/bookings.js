@@ -9,10 +9,10 @@ const Bookings = () => {
   const [editingId, setEditingId] = useState(null);
   const [editStatus, setEditStatus] = useState("");
   const [loading, setLoading] = useState(false);
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
 
   const axiosInstance = axios.create({
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: token ? `Bearer ${token}` : undefined },
   });
 
   const fetchBookings = async () => {

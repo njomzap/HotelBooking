@@ -30,7 +30,7 @@ export default function AdminLayout({ children }) {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
+    <div className="flex flex-col min-h-full bg-gray-100">
 
       <header className="flex justify-between items-center bg-white border-b px-6 py-4 shadow">
      

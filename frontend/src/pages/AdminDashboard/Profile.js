@@ -60,27 +60,90 @@ export default function Profile() {
 
   return (
     <AdminLayout>
-      <div className="space-y-8 max-w-2xl mx-auto">
-        <h1 className="text-2xl font-semibold">Profile</h1>
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 -m-6 p-6">
+        <div className="max-w-5xl mx-auto space-y-8">
+          <h1 className="text-3xl font-semibold text-gray-900 text-center">
+            {username ? `${username}'s Profile` : "Profile"}
+          </h1>
 
-        <div className="bg-white p-6 rounded border space-y-4">
-          <h2 className="font-medium">Change Username</h2>
-          <div className="flex gap-2">
-            <input value={username} onChange={(e) => setUsername(e.target.value)} className="border px-3 py-2 rounded flex-1" />
-            <button onClick={updateUsername} className="bg-orange-500 text-white px-4 py-2 rounded">Save</button>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-2xl shadow p-6 space-y-4 border border-orange-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-semibold">UN</div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Change username</h2>
+                  <p className="text-sm text-gray-500">Keep your admin identity fresh for audit logs.</p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-3">
+                <input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="border border-gray-200 px-4 py-3 rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                />
+                <button
+                  onClick={updateUsername}
+                  className="self-start px-5 py-2 rounded-xl bg-orange-500 text-white font-semibold hover:bg-orange-600"
+                >
+                  Save changes
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow p-6 space-y-4 border border-orange-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-semibold">PW</div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Update password</h2>
+                  <p className="text-sm text-gray-500">Choose a unique passphrase for stronger security.</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <input
+                  type="password"
+                  placeholder="Current password"
+                  value={passwords.currentPassword}
+                  onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
+                  className="w-full border border-gray-200 px-4 py-3 rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                />
+                <input
+                  type="password"
+                  placeholder="New password"
+                  value={passwords.newPassword}
+                  onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
+                  className="w-full border border-gray-200 px-4 py-3 rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                />
+                <input
+                  type="password"
+                  placeholder="Confirm new password"
+                  value={passwords.confirmPassword}
+                  onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
+                  className="w-full border border-gray-200 px-4 py-3 rounded-xl focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                />
+                <button
+                  onClick={changePassword}
+                  className="px-5 py-2 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800"
+                >
+                  Update password
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div className="bg-white p-6 rounded border space-y-4">
-          <h2 className="font-medium">Change Password</h2>
-          <input type="password" placeholder="Current" value={passwords.currentPassword} onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} className="w-full border px-3 py-2 rounded" />
-          <input type="password" placeholder="New" value={passwords.newPassword} onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} className="w-full border px-3 py-2 rounded" />
-          <input type="password" placeholder="Confirm" value={passwords.confirmPassword} onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })} className="w-full border px-3 py-2 rounded" />
-          <button onClick={changePassword} className="bg-orange-500 text-white px-4 py-2 rounded">Update Password</button>
-        </div>
-
-        <div className="flex justify-end">
-          <button onClick={deleteAccount} className="bg-red-500 text-white px-4 py-2 rounded">Delete Account</button>
+          <div className="bg-white rounded-2xl shadow p-6 border border-red-100">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold text-red-600">Delete account</h2>
+                <p className="text-sm text-gray-500">This action cannot be undone and removes admin access entirely.</p>
+              </div>
+              <button
+                onClick={deleteAccount}
+                className="px-5 py-2 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600"
+              >
+                Delete account
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </AdminLayout>

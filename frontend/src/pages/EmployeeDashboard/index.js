@@ -6,7 +6,7 @@ import axios from "axios";
 
 const EmployeeDashboard = () => {
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("accessToken");
 
   const [summaryData, setSummaryData] = useState({
     rooms: 0,

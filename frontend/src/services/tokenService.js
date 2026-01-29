@@ -6,6 +6,12 @@ const api = axios.create({
   withCredentials: true, // Important for httpOnly cookies
 });
 
+const emitAuthChange = () => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('auth-change'));
+  }
+};
+
 // Token refresh state
 let isRefreshing = false;
 let refreshSubscribers = [];
@@ -52,6 +58,7 @@ api.interceptors.response.use(
         localStorage.removeItem('accessToken');
         localStorage.removeItem('role');
         localStorage.removeItem('userId');
+        emitAuthChange();
         window.location.href = '/login';
         return Promise.reject(error);
       }
@@ -86,6 +93,8 @@ api.interceptors.response.use(
           localStorage.setItem('role', response.data.user.role);
           localStorage.setItem('userId', response.data.user.id);
         }
+
+        emitAuthChange();
 
         // Log token refresh (for debugging)
         console.log('🔄 ACCESS TOKEN REFRESHED:');
@@ -159,6 +168,7 @@ export const logout = async () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('role');
     localStorage.removeItem('userId');
+    emitAuthChange();
     
     console.log('🗑️ USER LOGGED OUT:');
     console.log('Timestamp:', new Date().toISOString());

@@ -5,7 +5,7 @@ const getLostAndFound = async (req, res) => {
     const { hotel_id } = req.query;
     let query = `
       SELECT lf.*, u.username, u.email, u.name 
-      FROM lost_found lf 
+      FROM lost_and_found lf 
       LEFT JOIN users u ON lf.user_id = u.id
     `;
     let params = [];
@@ -28,7 +28,7 @@ const getLostAndFound = async (req, res) => {
 
 const getItemById = async (req, res) => {
   try {
-    const [item] = await pool.query("SELECT * FROM lost_found WHERE id = ?", [req.params.id]);
+    const [item] = await pool.query("SELECT * FROM lost_and_found WHERE id = ?", [req.params.id]);
     if (item.length === 0) return res.status(404).json({ message: "Item not found" });
     res.json(item[0]);
   } catch (err) {
@@ -51,7 +51,7 @@ const createItem = async (req, res) => {
     }
     
     const [result] = await pool.query(
-      "INSERT INTO lost_found (item_name, description, date_found, location, hotel_id, user_id) VALUES (?, ?, ?, ?, ?, ?)",
+      "INSERT INTO lost_and_found (item_name, description, date_found, location, hotel_id, user_id) VALUES (?, ?, ?, ?, ?, ?)",
       [item_name, description, date_found, location, hotel_id, userId]
     );
     
@@ -60,7 +60,7 @@ const createItem = async (req, res) => {
     // Return the created item with user information
     const [newItem] = await pool.query(
       `SELECT lf.*, u.username, u.email, u.name 
-       FROM lost_found lf 
+       FROM lost_and_found lf 
        LEFT JOIN users u ON lf.user_id = u.id 
        WHERE lf.id = ?`, 
       [result.insertId]
@@ -83,14 +83,14 @@ const updateItem = async (req, res) => {
     console.log("Updating item:", id, "with claimed status:", claimed);
     
     // Check if item exists first
-    const [existingItem] = await pool.query("SELECT id FROM lost_found WHERE id = ?", [id]);
+    const [existingItem] = await pool.query("SELECT id FROM lost_and_found WHERE id = ?", [id]);
     if (existingItem.length === 0) {
       return res.status(404).json({ message: "Item not found" });
     }
     
     // Update only the claimed status
     await pool.query(
-      "UPDATE lost_found SET claimed = ? WHERE id = ?",
+      "UPDATE lost_and_found SET claimed = ? WHERE id = ?",
       [claimed, id]
     );
     
@@ -99,7 +99,7 @@ const updateItem = async (req, res) => {
     // Return updated item
     const [updatedItem] = await pool.query(
       `SELECT lf.*, u.username, u.email, u.name 
-       FROM lost_found lf 
+       FROM lost_and_found lf 
        LEFT JOIN users u ON lf.user_id = u.id 
        WHERE lf.id = ?`, 
       [id]
@@ -115,7 +115,7 @@ const updateItem = async (req, res) => {
 
 const deleteItem = async (req, res) => {
   try {
-    await pool.query("DELETE FROM lost_found WHERE id=?", [req.params.id]);
+    await pool.query("DELETE FROM lost_and_found WHERE id=?", [req.params.id]);
     res.json({ message: "Item deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -42,17 +42,36 @@ export default function App() {
   useEffect(() => {
     const savedRole = localStorage.getItem("role");
     const accessToken = localStorage.getItem("accessToken");
-    if (savedRole && accessToken) setRole(savedRole);
+    if (savedRole && accessToken) {
+      setRole(savedRole);
+    } else {
+      setRole(null);
+    }
+
+    const handleAuthChange = () => {
+      const currentRole = localStorage.getItem("role");
+      const currentToken = localStorage.getItem("accessToken");
+      setRole(currentRole && currentToken ? currentRole : null);
+    };
+
+    window.addEventListener("auth-change", handleAuthChange);
+
+    return () => {
+      window.removeEventListener("auth-change", handleAuthChange);
+    };
   }, []);
+
+  const showPublicNavbar = !role;
+  const showUserNavbar = role === "user";
+  const shouldOffsetForNavbar = showPublicNavbar || showUserNavbar;
 
   return (
     <Router>
       <div className="flex flex-col min-h-screen">
-        {!role && <Navbar setRole={setRole} />}
-        {role === "user" && <UserNavbar setRole={setRole} />}
-        {(role === "admin" || role === "employee") && <Navbar setRole={setRole} />}
+        {showPublicNavbar && <Navbar setRole={setRole} />}
+        {showUserNavbar && <UserNavbar setRole={setRole} />}
 
-        <main className={`flex-grow ${(!role || role === "admin" || role === "employee") ? "pt-20" : ""}`}>
+        <main className={`flex-grow ${shouldOffsetForNavbar ? "pt-20" : ""}`}>
           <Routes>
 
             {/* PUBLIC */}
