@@ -29,6 +29,7 @@ app.use('/api/extra-requests', require('./routes/extraRequests'));
 app.use('/api/lostfound', require('./routes/lostFound'));
 app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/payments', require('./routes/payments'));
+app.use('/api/promo-codes', require('./routes/promoCodes'));
 
 // Test route
 app.get('/', (req, res) => {

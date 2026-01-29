@@ -1,4 +1,51 @@
 const db = require("../db");
+const normalizePromoRow = (row) => ({
+  id: row.id,
+  code: row.code,
+  discount_type: row.discount_type,
+  discount_value: Number(row.discount_value),
+  start_date: row.start_date,
+  end_date: row.end_date,
+  usage_limit: row.usage_limit,
+  usage_count: row.usage_count,
+  active: Boolean(row.active),
+});
+
+const computePromoDiscount = (promo, subtotal) => {
+  if (!subtotal || subtotal <= 0) return 0;
+  if (promo.discount_type === "percentage") {
+    return Number(((promo.discount_value / 100) * subtotal).toFixed(2));
+  }
+  return Math.min(subtotal, Number(promo.discount_value));
+};
+
+const evaluatePromoCode = async (code, subtotal) => {
+  const [rows] = await db.query("SELECT * FROM promo_codes WHERE code = ?", [code.trim()]);
+  if (!rows.length) {
+    throw new Error("Promo code not found");
+  }
+
+  const promo = normalizePromoRow(rows[0]);
+  const now = new Date();
+  if (now < new Date(promo.start_date) || now > new Date(promo.end_date)) {
+    throw new Error("Promo code is not active");
+  }
+
+  if (!promo.active) {
+    throw new Error("Promo code is disabled");
+  }
+
+  if (promo.usage_limit !== null && promo.usage_count >= promo.usage_limit) {
+    throw new Error("Promo code usage limit reached");
+  }
+
+  const discount_amount = computePromoDiscount(promo, subtotal);
+  return {
+    promoId: promo.id,
+    discount_amount,
+  };
+};
+
 exports.getAllBookings = async (req, res) => {
   try {
     const [rows] = await db.query(`
@@ -45,7 +92,7 @@ exports.getBookingById = async (req, res) => {
 exports.createBooking = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { room_id, check_in, check_out } = req.body;
+    const { room_id, check_in, check_out, promo_code } = req.body;
 
     if (!room_id || !check_in || !check_out) {
       return res.status(400).json({
@@ -90,7 +137,22 @@ exports.createBooking = async (req, res) => {
     const nights = Math.ceil(
       (checkOutDate - checkInDate) / (1000 * 60 * 60 * 24)
     );
-    const totalPrice = room.price * nights;
+    const subtotal = room.price * nights;
+
+    let discountAmount = 0;
+    let appliedPromoId = null;
+
+    if (promo_code) {
+      try {
+        const promoResult = await evaluatePromoCode(promo_code, subtotal);
+        discountAmount = promoResult.discount_amount;
+        appliedPromoId = promoResult.promoId;
+      } catch (promoErr) {
+        return res.status(400).json({ message: promoErr.message });
+      }
+    }
+
+    const totalPrice = Math.max(subtotal - discountAmount, 0);
 
     const [result] = await db.query(
       `INSERT INTO bookings
@@ -99,9 +161,18 @@ exports.createBooking = async (req, res) => {
       [userId, room_id, checkInDate, checkOutDate, totalPrice]
     );
 
+    if (appliedPromoId) {
+      await db.query(
+        "UPDATE promo_codes SET usage_count = usage_count + 1 WHERE id = ?",
+        [appliedPromoId]
+      );
+    }
+
     res.status(201).json({
       booking_id: result.insertId,
       total_price: totalPrice,
+      discount_amount: discountAmount,
+      promo_code: appliedPromoId ? promo_code : null,
       status: "pending_payment",
       message: "Booking created. Awaiting payment."
     });
