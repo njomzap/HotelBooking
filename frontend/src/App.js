@@ -41,16 +41,18 @@ export default function App() {
 
   useEffect(() => {
     const savedRole = localStorage.getItem("role");
-    if (savedRole) setRole(savedRole);
+    const accessToken = localStorage.getItem("accessToken");
+    if (savedRole && accessToken) setRole(savedRole);
   }, []);
 
   return (
     <Router>
       <div className="flex flex-col min-h-screen">
-        {(!role || role === "user") && <Navbar setRole={setRole} />}
+        {!role && <Navbar setRole={setRole} />}
         {role === "user" && <UserNavbar setRole={setRole} />}
+        {(role === "admin" || role === "employee") && <Navbar setRole={setRole} />}
 
-        <main className="flex-grow">
+        <main className={`flex-grow ${(!role || role === "admin" || role === "employee") ? "pt-20" : ""}`}>
           <Routes>
 
             {/* PUBLIC */}

@@ -1,15 +1,34 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { logout } from "../services/tokenService";
 
 export default function UserNavbar({ setRole }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    if (setRole) setRole(null);
-    navigate("/login");
+  const handleLogout = async () => {
+    const accessToken = localStorage.getItem("accessToken");
+    const role = localStorage.getItem("role");
+    const userId = localStorage.getItem("userId");
+    
+    // Log logout attempt
+    console.log('🗑️ USER LOGOUT INITIATED:');
+    console.log('Access Token:', accessToken ? accessToken.substring(0, 20) + '...' : 'null');
+    console.log('Role:', role);
+    console.log('User ID:', userId);
+    console.log('Timestamp:', new Date().toISOString());
+    
+    try {
+      await logout();
+      console.log('✅ USER LOGOUT SUCCESSFUL');
+      if (setRole) setRole(null);
+      navigate("/login");
+    } catch (error) {
+      console.error('❌ USER LOGOUT ERROR:', error);
+      // Fallback
+      if (setRole) setRole(null);
+      navigate("/login");
+    }
   };
 
   return (

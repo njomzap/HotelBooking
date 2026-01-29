@@ -1,12 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../services/tokenService";
 
 import SummaryCard from "../../components/SummaryCard";
-
-const BOOKINGS_API = "http://localhost:5000/api/bookings/user/me";
-const ME_API = "http://localhost:5000/api/users/me";
-const PROMOS_API = "http://localhost:5000/api/promo-codes/public/active";
 
 export default function SimpleUserDashboard() {
   const navigate = useNavigate();
@@ -16,7 +12,7 @@ export default function SimpleUserDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("accessToken");
 
   useEffect(() => {
     if (!token) {
@@ -24,14 +20,12 @@ export default function SimpleUserDashboard() {
       return;
     }
 
-    const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
-
     const fetchData = async () => {
       try {
         const [meRes, bookingsRes, promoRes] = await Promise.all([
-          axios.get(ME_API, authHeaders),
-          axios.get(BOOKINGS_API, authHeaders),
-          axios.get(PROMOS_API),
+          api.get("/users/me"),
+          api.get("/bookings/user/me"),
+          api.get("/promo-codes/public/active"),
         ]);
 
         setUser(meRes.data);

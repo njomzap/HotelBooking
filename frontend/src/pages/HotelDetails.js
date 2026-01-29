@@ -254,7 +254,12 @@ const HotelDetails = () => {
                   <MapPin className="w-5 h-5 text-orange-500" />
                   Hotel Location
                 </h3>
-                <HotelMapLeaflet address={hotel.address} city={hotel.city} />
+                {/* <HotelMapLeaflet address={hotel.address} city={hotel.city} /> */}
+                <div className="bg-gray-100 rounded-2xl p-8 text-center">
+                  <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">Map temporarily disabled</p>
+                  <p className="text-sm text-gray-500 mt-2">{hotel.address}, {hotel.city}</p>
+                </div>
               </div>
             </div>
           </div>

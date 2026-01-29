@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../services/tokenService";
 import AdminLayout from "../../components/AdminLayout";
 
 export default function Users() {
@@ -8,7 +8,7 @@ export default function Users() {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("accessToken");
 
   useEffect(() => {
     if (!token) {
@@ -16,23 +16,17 @@ export default function Users() {
     }
   }, [token, navigate]);
 
-  const axiosInstance = axios.create({
-    baseURL: "http://localhost:5000/api",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
   const fetchUsers = async () => {
     try {
-      const res = await axiosInstance.get("/users");
+      const res = await api.get("/users");
       setUsers(res.data);
     } catch (err) {
       console.error("Failed to fetch users", err);
       if (err.response?.status === 401) {
         alert("Session expired. Please log in again.");
-        localStorage.removeItem("token");
+        localStorage.removeItem("accessToken");
         localStorage.removeItem("role");
+        localStorage.removeItem("userId");
         navigate("/login");
       } else {
         alert("Failed to fetch users");
@@ -46,14 +40,15 @@ export default function Users() {
 
   const updateRole = async (id, role) => {
     try {
-      await axiosInstance.patch(`/users/role/${id}`, { role });
+      await api.patch(`/users/role/${id}`, { role });
       fetchUsers(); // Refresh list
     } catch (err) {
       console.error(err);
       if (err.response?.status === 401) {
         alert("Session expired. Please log in again.");
-        localStorage.removeItem("token");
+        localStorage.removeItem("accessToken");
         localStorage.removeItem("role");
+        localStorage.removeItem("userId");
         navigate("/login");
       } else {
         alert("Failed to update role");

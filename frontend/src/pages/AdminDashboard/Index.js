@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../services/tokenService";
 import AdminLayout from "../../components/AdminLayout";
 import SummaryCard from "../../components/SummaryCard";
 import QuickActionButton from "../../components/QuickActionButton";
@@ -9,18 +9,16 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [rooms, setRooms] = useState([]);
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("accessToken");
   const navigate = useNavigate();
-
-  const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [usersRes, bookingsRes, roomsRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/users", authHeaders),
-          axios.get("http://localhost:5000/api/bookings", authHeaders),
-          axios.get("http://localhost:5000/api/rooms", authHeaders),
+          api.get("/users"),
+          api.get("/bookings"),
+          api.get("/rooms"),
         ]);
 
         setUsers(usersRes.data);

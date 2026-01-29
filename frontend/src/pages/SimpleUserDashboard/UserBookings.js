@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { Calendar, MapPin, DollarSign, Edit, X, CreditCard, Clock, User, Home } from "lucide-react";
-
-const BOOKINGS_API = "http://localhost:5000/api/bookings";
-const PAYMENTS_API = "http://localhost:5000/api/payments";
+import api from "../../services/tokenService";
 
 const UserBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -14,7 +11,7 @@ const UserBookings = () => {
   const [editCheckOut, setEditCheckOut] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("accessToken");
 
   useEffect(() => {
     console.log("=== USERBOOKINGS COMPONENT MOUNTED ===");
@@ -33,9 +30,7 @@ const UserBookings = () => {
 
   const fetchBookings = async () => {
     try {
-      const res = await axios.get(`${BOOKINGS_API}/user/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/bookings/user/me");
       setBookings(res.data || []);
     } catch (err) {
       setError("Failed to load bookings");
@@ -59,10 +54,9 @@ const UserBookings = () => {
   const saveEdit = async (bookingId) => {
     try {
       setSaving(true);
-      await axios.put(
-        `${BOOKINGS_API}/user/${bookingId}`,
-        { check_in: editCheckIn, check_out: editCheckOut },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await api.put(
+        `/bookings/user/${bookingId}`,
+        { check_in: editCheckIn, check_out: editCheckOut }
       );
       await fetchBookings();
       cancelEdit();
@@ -76,9 +70,7 @@ const UserBookings = () => {
   const cancelBooking = async (bookingId) => {
     if (!window.confirm("Are you sure you want to cancel this booking?")) return;
     try {
-      await axios.delete(`${BOOKINGS_API}/${bookingId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/bookings/${bookingId}`);
       await fetchBookings();
     } catch (err) {
       alert(err.response?.data?.message || "Failed to cancel booking");
@@ -87,10 +79,9 @@ const UserBookings = () => {
 
   const handlePayment = async (bookingId) => {
     try {
-      const res = await axios.post(
-        `${PAYMENTS_API}/create-checkout-session`,
-        { bookingId },
-        { headers: { Authorization: `Bearer ${token}` } }
+      const res = await api.post(
+        "/payments/create-checkout-session",
+        { bookingId }
       );
       window.location.href = res.data.url;
     } catch (err) {
@@ -176,8 +167,9 @@ const UserBookings = () => {
               </div>
               <button
                 onClick={() => {
-                  localStorage.removeItem("token");
+                  localStorage.removeItem("accessToken");
                   localStorage.removeItem("role");
+                  localStorage.removeItem("userId");
                   window.location.href = "/login";
                 }}
                 className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"

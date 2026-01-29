@@ -1,14 +1,32 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
+import { logout } from "../services/tokenService";
 
 export default function AdminLayout({ children }) {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    window.location.href = "/login";
+  const handleLogout = async () => {
+    const accessToken = localStorage.getItem("accessToken");
+    const role = localStorage.getItem("role");
+    const userId = localStorage.getItem("userId");
+    
+    // Log logout attempt
+    console.log('🗑️ ADMIN LOGOUT INITIATED:');
+    console.log('Access Token:', accessToken ? accessToken.substring(0, 20) + '...' : 'null');
+    console.log('Role:', role);
+    console.log('User ID:', userId);
+    console.log('Timestamp:', new Date().toISOString());
+    
+    try {
+      await logout();
+      console.log('✅ ADMIN LOGOUT SUCCESSFUL');
+      navigate("/login");
+    } catch (error) {
+      console.error('❌ ADMIN LOGOUT ERROR:', error);
+      // Fallback navigation
+      navigate("/login");
+    }
   };
 
   return (

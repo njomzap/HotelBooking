@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 const app = express();
 
 // CORS
@@ -17,6 +18,9 @@ app.use('/api/webhooks/stripe', require('./routes/stripeWebHookRoutes'));
 // JSON parsing for all other routes
 app.use(express.json());
 
+// Cookie parser middleware
+app.use(cookieParser());
+
 // Static uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -28,6 +32,7 @@ app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/extra-requests', require('./routes/extraRequests'));
 app.use('/api/lostfound', require('./routes/lostFound'));
 app.use('/api/reviews', require('./routes/reviews'));
+app.use('/api/refresh', require('./routes/refreshToken'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/promo-codes', require('./routes/promoCodes'));
 

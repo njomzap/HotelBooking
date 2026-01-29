@@ -1,21 +1,19 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../services/tokenService";
 import AdminLayout from "../../components/AdminLayout";
 import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("accessToken");
 
   const [username, setUsername] = useState("");
   const [passwords, setPasswords] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
 
-  const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
-
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/users/me", authHeaders);
+        const res = await api.get("/users/me");
         setUsername(res.data.username);
       } catch {
         alert("Failed to fetch profile");
@@ -27,7 +25,7 @@ export default function Profile() {
   const updateUsername = async () => {
     if (!username) return alert("Username cannot be empty");
     try {
-      await axios.put("http://localhost:5000/api/users/me/username", { username }, authHeaders);
+      await api.put("/users/me/username", { username });
       alert("Username updated successfully");
     } catch {
       alert("Failed to update username");
@@ -39,7 +37,7 @@ export default function Profile() {
     if (!currentPassword || !newPassword || !confirmPassword) return alert("All fields required");
     if (newPassword !== confirmPassword) return alert("Passwords do not match");
     try {
-      await axios.put("http://localhost:5000/api/users/me/password", { currentPassword, newPassword }, authHeaders);
+      await api.put("/users/me/password", { currentPassword, newPassword });
       alert("Password updated");
       setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch {
@@ -50,8 +48,10 @@ export default function Profile() {
   const deleteAccount = async () => {
     if (!window.confirm("Delete account?")) return;
     try {
-      await axios.delete("http://localhost:5000/api/users/me", authHeaders);
-      localStorage.removeItem("token");
+      await api.delete("/users/me");
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("role");
+      localStorage.removeItem("userId");
       navigate("/login");
     } catch {
       alert("Failed to delete account");

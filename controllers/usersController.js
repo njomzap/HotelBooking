@@ -1,6 +1,7 @@
 const pool = require("../db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const RefreshTokenService = require("../services/refreshTokenService");
 
 exports.register = async (req, res) => {
   try {
@@ -55,13 +56,44 @@ exports.login = async (req, res) => {
     const valid = await bcrypt.compare(password, rows[0].password);
     if (!valid) return res.status(401).json({ message: "Incorrect password" });
 
-    const token = jwt.sign(
-      { id: rows[0].id, username: rows[0].username, role: rows[0].role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
+    const user = rows[0];
+    
+    // Generate access token (short-lived: 15 minutes)
+    const accessToken = RefreshTokenService.generateAccessToken(user);
+    
+    // Generate refresh token (long-lived: 7 days)
+    const refreshToken = RefreshTokenService.generateRefreshToken();
+    
+    // Save refresh token to database
+    const tokenSaved = await RefreshTokenService.saveRefreshToken(user.id, refreshToken);
+    
+    if (!tokenSaved) {
+      return res.status(500).json({ message: "Failed to save refresh token" });
+    }
 
-    res.json({ token, role: rows[0].role, id: rows[0].id });
+    // Set refresh token in httpOnly cookie (more secure than localStorage)
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true, // Prevents XSS attacks
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      sameSite: 'strict', // Prevents CSRF attacks
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/'
+    });
+
+    // Log token creation (for debugging)
+    console.log('🔑 TOKENS CREATED:');
+    console.log('Access Token:', accessToken.substring(0, 20) + '...');
+    console.log('Refresh Token:', refreshToken.substring(0, 20) + '...');
+    console.log('User:', username, 'Role:', user.role);
+    console.log('---');
+
+    res.json({ 
+      accessToken, 
+      role: user.role, 
+      id: user.id,
+      username: user.username,
+      message: "Login successful"
+    });
   } catch (err) {
     console.error("LOGIN ERROR:", err);
     res.status(500).json({ message: "Server error" });

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import api from "../../services/tokenService";
 
 export default function Profile() {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("accessToken");
   const navigate = useNavigate();
 
   const [currentUsername, setCurrentUsername] = useState("");
@@ -15,13 +15,11 @@ export default function Profile() {
   });
   const [loading, setLoading] = useState(true);
 
-  const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
-
   // Fetch current username
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/users/me", authHeaders);
+        const res = await api.get("/users/me");
         setCurrentUsername(res.data.username || "");
       } catch (err) {
         console.error(err);
@@ -41,10 +39,9 @@ export default function Profile() {
     }
 
     try {
-      await axios.put(
-        "http://localhost:5000/api/users/me/username",
-        { username: newUsername },
-        authHeaders
+      await api.put(
+        "/users/me/username",
+        { username: newUsername }
       );
 
       alert("Username updated successfully!");
@@ -64,10 +61,9 @@ export default function Profile() {
     }
 
     try {
-      await axios.put(
-        "http://localhost:5000/api/users/me/password",
-        passwords,
-        authHeaders
+      await api.put(
+        "/users/me/password",
+        passwords
       );
 
       alert("Password updated successfully!");
@@ -83,10 +79,11 @@ export default function Profile() {
     if (!window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) return;
 
     try {
-      await axios.delete("http://localhost:5000/api/users/me", authHeaders);
+      await api.delete("/users/me");
       alert("Account deleted successfully");
-      localStorage.removeItem("token");
+      localStorage.removeItem("accessToken");
       localStorage.removeItem("role");
+      localStorage.removeItem("userId");
       navigate("/register");
     } catch (err) {
       console.error(err);

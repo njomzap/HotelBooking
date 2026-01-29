@@ -1,12 +1,30 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
 import EmployeeSidebar from "./EmployeeSidebar";
+import { logout } from "../services/tokenService";
 
 export default function EmployeeLayout() {
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    window.location.href = "/login";
+  const handleLogout = async () => {
+    const accessToken = localStorage.getItem("accessToken");
+    const role = localStorage.getItem("role");
+    const userId = localStorage.getItem("userId");
+    
+    // Log logout attempt
+    console.log('🗑️ EMPLOYEE LOGOUT INITIATED:');
+    console.log('Access Token:', accessToken ? accessToken.substring(0, 20) + '...' : 'null');
+    console.log('Role:', role);
+    console.log('User ID:', userId);
+    console.log('Timestamp:', new Date().toISOString());
+    
+    try {
+      await logout();
+      console.log('✅ EMPLOYEE LOGOUT SUCCESSFUL');
+      window.location.href = "/login";
+    } catch (error) {
+      console.error('❌ EMPLOYEE LOGOUT ERROR:', error);
+      // Fallback navigation
+      window.location.href = "/login";
+    }
   };
 
   return (
