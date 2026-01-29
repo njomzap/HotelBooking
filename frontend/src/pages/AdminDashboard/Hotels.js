@@ -10,6 +10,7 @@ export default function Hotels() {
   const [editingId, setEditingId] = useState(null);
   const [images, setImages] = useState([]);
   const [errors, setErrors] = useState({});
+  const [isDragging, setIsDragging] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -49,10 +50,29 @@ export default function Hotels() {
 
   const handleImageChange = (e) => setImages(e.target.files);
 
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const droppedFiles = e.dataTransfer.files;
+    setImages(droppedFiles);
+    setErrors({ ...errors, images: false });
+  };
+
   const resetForm = () => {
     setEditingId(null);
     setImages([]);
     setErrors({});
+    setIsDragging(false);
     setFormData({
       name: "",
       address: "",
@@ -132,53 +152,168 @@ export default function Hotels() {
 
   return (
     <AdminLayout>
-      <form onSubmit={handleSubmit} className="bg-gray-50 p-6 rounded-xl space-y-4">
-        <h2 className="text-xl font-semibold">{editingId ? "Edit Hotel" : "Add Hotel"}</h2>
+      <div className="space-y-6">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4">
+            <h2 className="text-xl font-bold text-white">
+              {editingId ? "Edit Hotel" : "Add New Hotel"}
+            </h2>
+            <p className="text-orange-100 text-sm mt-1">
+              {editingId ? "Update hotel information" : "Enter hotel details to create a new listing"}
+            </p>
+          </div>
+          
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {["name", "address", "city", "phone", "email", "country"].map((field) => (
+                <div key={field} className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 capitalize">
+                    {field.replace('_', ' ')}
+                  </label>
+                  <input
+                    name={field}
+                    placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+                    value={formData[field]}
+                    onChange={handleChange}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all ${
+                      errors[field] 
+                        ? "border-red-500 bg-red-50" 
+                        : "border-gray-300 hover:border-gray-400"
+                    }`}
+                  />
+                  {errors[field] && (
+                    <p className="text-red-500 text-xs">Required field</p>
+                  )}
+                </div>
+              ))}
+            </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {["name", "address", "city", "phone", "email", "country"].map((field) => (
-            <input
-              key={field}
-              name={field}
-              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-              value={formData[field]}
-              onChange={handleChange}
-              className={`border rounded px-3 py-2 ${
-                errors[field] ? "border-red-500" : ""
-              }`}
-            />
-          ))}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Hotel Images
+              </label>
+              <div
+                className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-all cursor-pointer ${
+                  isDragging 
+                    ? "border-orange-500 bg-orange-50" 
+                    : errors.images 
+                      ? "border-red-500 bg-red-50" 
+                      : "border-gray-300 hover:border-orange-400 hover:bg-orange-50"
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <div className="pointer-events-none">
+                  <svg className="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <p className="text-sm text-gray-600">
+                    {isDragging ? "Drop images here" : "Drag & drop images here, or click to select"}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 10MB</p>
+                </div>
+              </div>
+              {errors.images && (
+                <p className="text-red-500 text-xs">At least one image is required</p>
+              )}
+              {images.length > 0 && (
+                <p className="text-sm text-gray-600 flex items-center">
+                  <svg className="w-4 h-4 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  {images.length} image{images.length > 1 ? 's' : ''} selected
+                </p>
+              )}
+            </div>
+
+            <div className="bg-orange-50 rounded-lg p-4">
+              <h3 className="text-base font-semibold text-gray-800 mb-3">Amenities & Features</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <label className="flex items-center space-x-2 cursor-pointer hover:bg-white p-2 rounded transition-colors">
+                  <input 
+                    type="checkbox" 
+                    name="has_pool" 
+                    checked={formData.has_pool} 
+                    onChange={handleChange}
+                    className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                  />
+                  <span className="text-gray-700 text-sm">🏊 Swimming Pool</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer hover:bg-white p-2 rounded transition-colors">
+                  <input 
+                    type="checkbox" 
+                    name="has_gym" 
+                    checked={formData.has_gym} 
+                    onChange={handleChange}
+                    className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                  />
+                  <span className="text-gray-700 text-sm">🏋️ Fitness Center</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer hover:bg-white p-2 rounded transition-colors">
+                  <input 
+                    type="checkbox" 
+                    name="parking" 
+                    checked={formData.parking} 
+                    onChange={handleChange}
+                    className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                  />
+                  <span className="text-gray-700 text-sm">🚗 Parking</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button 
+                type="submit"
+                className="bg-orange-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-orange-600 transition-colors shadow-sm"
+              >
+                {editingId ? "Update Hotel" : "Create Hotel"}
+              </button>
+              {editingId && (
+                <button 
+                  type="button"
+                  onClick={resetForm}
+                  className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          </form>
         </div>
 
-        <input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={handleImageChange}
-          className={`border p-2 rounded ${errors.images ? "border-red-500" : ""}`}
-        />
-
-        <div className="flex gap-6">
-          <label>
-            <input type="checkbox" name="has_pool" checked={formData.has_pool} onChange={handleChange} /> Pool
-          </label>
-          <label>
-            <input type="checkbox" name="has_gym" checked={formData.has_gym} onChange={handleChange} /> Gym
-          </label>
-          <label>
-            <input type="checkbox" name="parking" checked={formData.parking} onChange={handleChange} /> Parking
-          </label>
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-800">
+              Hotel Management
+            </h2>
+            <div className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+              {hotels.length} {hotels.length === 1 ? 'Hotel' : 'Hotels'}
+            </div>
+          </div>
+          
+          {hotels.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-5xl mb-3 opacity-50">🏨</div>
+              <h3 className="text-lg font-medium text-gray-600 mb-2">No Hotels Added</h3>
+              <p className="text-gray-500 text-sm">Add your first hotel using the form above</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {hotels.map((hotel) => (
+                <HotelCard key={hotel.id} hotel={hotel} onEdit={handleEdit} onDelete={handleDelete} isAdmin />
+              ))}
+            </div>
+          )}
         </div>
-
-        <button className="bg-orange-500 text-white px-6 py-2 rounded">
-          {editingId ? "Update" : "Create"}
-        </button>
-      </form>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-        {hotels.map((hotel) => (
-          <HotelCard key={hotel.id} hotel={hotel} onEdit={handleEdit} onDelete={handleDelete} isAdmin />
-        ))}
       </div>
     </AdminLayout>
   );

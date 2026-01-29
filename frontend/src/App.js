@@ -31,6 +31,7 @@ import LostFound from "./pages/LostFound";
 import EmployeeBookings from "./pages/EmployeeDashboard/bookings";
 import EmployeeRooms from "./pages/EmployeeDashboard/rooms";
 import EmployeeProfile from "./pages/EmployeeDashboard/profile";
+import EmployeeLostFound from "./pages/EmployeeDashboard/LostFound";
 import EmployeeDashboard from "./pages/EmployeeDashboard/index";
 
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -144,8 +145,8 @@ export default function App() {
               <Route index element={<EmployeeDashboard />} />  {/* default dashboard */}
               <Route path="rooms" element={<EmployeeRooms />} />
               <Route path="bookings" element={<EmployeeBookings />} />
+              <Route path="lostfound" element={<EmployeeLostFound />} />
               <Route path="profile" element={<EmployeeProfile />} />
-              <Route path="lostfound" element={<LostFound />} />
             </Route>
 
 

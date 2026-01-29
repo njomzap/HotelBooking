@@ -16,6 +16,8 @@ const HotelDetails = () => {
   const [loading, setLoading] = useState(true);
   const [roomsLoading, setRoomsLoading] = useState(true);
 
+  // Lost & Found State
+  const [showLostFoundModal, setShowLostFoundModal] = useState(false);
   const [lostItems, setLostItems] = useState([]);
   const [newItem, setNewItem] = useState({
     item_name: "",
@@ -76,17 +78,48 @@ const HotelDetails = () => {
 
   const handleAddItem = async (e) => {
     e.preventDefault();
+    
+    // Check if user is logged in
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Please login to report lost items");
+      return;
+    }
+    
     try {
       const res = await axios.post(`http://localhost:5000/api/lostfound`, {
         ...newItem,
         hotel_id: id,
-      });
-      setLostItems([...lostItems, res.data]);
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      
+      // Add the new item to the list
+      setLostItems(prev => [...prev, res.data]);
+      
+      // Reset form
       setNewItem({ item_name: "", description: "", date_found: "", location: "" });
+      
+      // Show success feedback
+      alert("Lost item reported successfully!");
+      
     } catch (err) {
       console.error("Error adding lost & found item:", err);
+      alert("Failed to report lost item. Please try again.");
     }
   };
+
+  // Function to refresh lost items when modal opens
+  const refreshLostItems = useCallback(async () => {
+    setLfLoading(true);
+    try {
+      const res = await axios.get(`http://localhost:5000/api/lostfound?hotel_id=${id}`);
+      setLostItems(res.data || []);
+    } catch (err) {
+      console.error("Error fetching lost & found items:", err);
+      setLostItems([]);
+    } finally {
+      setLfLoading(false);
+    }
+  }, [id]);
 
   
   if (loading)
@@ -99,264 +132,349 @@ const HotelDetails = () => {
     );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        {/* Hotel Image Gallery */}
-        <div className="mb-8">
-          <div className="relative rounded-3xl overflow-hidden shadow-2xl group">
-            {hotel.images?.length ? (
-              <div className="relative">
-                <img
-                  src={`http://localhost:5000${hotel.images[0]}`}
-                  alt={hotel.name || hotel.hotel_name}
-                  className="w-full h-[500px] object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-              </div>
-            ) : (
-              <div className="w-full h-[500px] bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-24 h-24 bg-gray-300 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <Bed className="w-12 h-12 text-gray-500" />
-                  </div>
-                  <p className="text-gray-500 text-lg font-medium">No image available</p>
-                </div>
-              </div>
-            )}
+    <div className="w-full">
+      {/* Hero Section with Hotel Image */}
+      <div className="relative w-full h-[60vh]">
+        {hotel.images?.length ? (
+          <>
+            <img
+              src={`http://localhost:5000${hotel.images[0]}`}
+              alt={hotel.name || hotel.hotel_name}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-orange-900/50"></div>
+          </>
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900">
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-orange-900/50"></div>
           </div>
-        </div>
-
-        {/* Hotel Header Section */}
-        <div className="bg-white rounded-3xl shadow-xl p-8 mb-12 border border-orange-100">
-          <div className="text-center">
+        )}
+        
+        <div className="absolute inset-0 flex items-end justify-center text-center text-white px-4 pb-12">
+          <div className="max-w-4xl mx-auto">
+            <div className="inline-flex items-center gap-2 bg-orange-500/20 backdrop-blur-sm text-orange-200 px-4 py-2 rounded-full text-sm font-medium mb-6 border border-orange-400/30">
+              <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
+              Luxury Hotel Experience
+            </div>
             
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            <h1 className="text-5xl md:text-6xl font-bold mb-4">
               {hotel.name || hotel.hotel_name}
             </h1>
-            <div className="flex items-center justify-center gap-8 text-gray-600">
+            
+            <div className="flex items-center justify-center gap-8 text-white/90">
               <div className="flex items-center gap-2">
-                <Star className="w-5 h-5 text-yellow-500 fill-current" />
+                <Star className="w-5 h-5 text-yellow-400 fill-current" />
                 <span className="font-semibold text-lg">4.5</span>
                 <span className="text-sm">(128 reviews)</span>
               </div>
-            </div>
-          </div>
-
-          {/* Hotel Information Cards */}
-          <div className="grid md:grid-cols-1 gap-6 mb-8">
-            <div className="bg-white rounded-2xl shadow-lg p-6 border border-orange-100 hover:shadow-xl transition-shadow">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-6 h-6 text-orange-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-3">Location & Contact</h3>
-                  <div className="space-y-2">
-                    <p className="text-gray-700 leading-relaxed">
-                      <span className="font-medium">Address:</span> {hotel.address}
-                    </p>
-                    <p className="text-gray-700 leading-relaxed">
-                      <span className="font-medium">City:</span> {hotel.city}
-                    </p>
-                    {hotel.phone && (
-                      <p className="text-gray-700 leading-relaxed">
-                        <span className="font-medium">Phone:</span> {hotel.phone}
-                      </p>
-                    )}
-                    {hotel.email && (
-                      <p className="text-gray-700 leading-relaxed">
-                        <span className="font-medium">Email:</span> {hotel.email}
-                      </p>
-                    )}
-                    {hotel.country && (
-                      <p className="text-gray-700 leading-relaxed">
-                        <span className="font-medium">Country:</span> {hotel.country}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-lg p-6 border border-orange-100 hover:shadow-xl transition-shadow">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Wifi className="w-6 h-6 text-orange-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-3">Amenities</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {hotel.has_pool && (
-                      <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
-                        <Waves className="w-3 h-3" />
-                        Pool
-                      </span>
-                    )}
-                    {hotel.has_gym && (
-                      <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">
-                        <Dumbbell className="w-3 h-3" />
-                        Gym
-                      </span>
-                    )}
-                    {hotel.parking && (
-                      <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium">
-                        <Car className="w-3 h-3" />
-                        Parking
-                      </span>
-                    )}
-                  </div>
-                </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                <span>{hotel.city}, {hotel.country}</span>
               </div>
             </div>
           </div>
-
-          {/* OpenStreetMap Section */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 border border-orange-100">
-            <HotelMapLeaflet address={hotel.address} city={hotel.city} />
-          </div>
-        </div>
-
-        {/* Rooms Section */}
-        <div className="mb-12">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
-              <Bed className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900">Available Rooms</h2>
-              <p className="text-gray-600">Choose your perfect stay</p>
-            </div>
-          </div>
-          {roomsLoading ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
-            </div>
-          ) : rooms.length === 0 ? (
-            <div className="bg-white rounded-3xl shadow-xl p-12 text-center border border-orange-100">
-              <Bed className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg font-medium">No rooms available for this hotel.</p>
-              <p className="text-gray-400 mt-2">Please check back later or contact us for assistance.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {rooms.map((room) => (
-                <RoomCard key={room.id} room={room} />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Reviews Section */}
-        <div className="mb-12">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
-              <Star className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900">Guest Reviews</h2>
-              <p className="text-gray-600">See what our guests are saying</p>
-            </div>
-          </div>
-          <div className="bg-white rounded-3xl shadow-xl p-8 border border-orange-100">
-            <ReviewsList hotelId={id} />
-          </div>
-        </div>
-
-   
-        {/* Lost & Found Section */}
-        <div className="mb-12">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
-              <Package className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900">Lost & Found</h2>
-              <p className="text-gray-600">Report or claim lost items</p>
-            </div>
-          </div>
-
-          {isLoggedIn && (
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-3xl shadow-xl p-8 mb-8 border border-orange-200">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                <Package className="w-5 h-5 text-orange-600" />
-                Report a Lost Item
-              </h3>
-              <form onSubmit={handleAddItem} className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Item Name</label>
-                    <input
-                      type="text"
-                      name="item_name"
-                      placeholder="e.g., Wallet, Phone, Keys"
-                      value={newItem.item_name}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white shadow-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Date Found</label>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        name="date_found"
-                        value={newItem.date_found}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white shadow-sm"
-                      />
-                      <Calendar className="absolute right-3 top-3.5 w-5 h-5 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                  <textarea
-                    name="description"
-                    placeholder="Provide a detailed description of the item..."
-                    value={newItem.description}
-                    onChange={handleInputChange}
-                    required
-                    rows={4}
-                    className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white shadow-sm resize-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Location Found</label>
-                  <input
-                    type="text"
-                    name="location"
-                    placeholder="e.g., Lobby, Room 205, Pool Area"
-                    value={newItem.location}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white shadow-sm"
-                  />
-                </div>
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    className="bg-gradient-to-r from-orange-600 to-orange-700 text-white px-8 py-3 rounded-xl hover:from-orange-700 hover:to-orange-800 transition-all transform hover:scale-105 shadow-lg font-medium flex items-center gap-2"
-                  >
-                    <Package className="w-5 h-5" />
-                    Submit Report
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {!isLoggedIn && (
-            <div className="bg-white rounded-3xl shadow-xl p-8 text-center border border-orange-100">
-              <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg font-medium mb-2">Login to Report Lost Items</p>
-              <p className="text-gray-400">Please sign in to access the lost & found service.</p>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Main Content */}
+      <div className="bg-gray-50 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {/* Hotel Information Section */}
+          <div className="bg-white rounded-3xl shadow-xl p-8 mb-12 border border-orange-100">
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* Location & Contact */}
+              <div className="bg-gradient-to-br from-orange-50 to-white rounded-2xl p-6 border border-orange-100">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
+                    <MapPin className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900">Location & Contact</h3>
+                </div>
+                <div className="space-y-3">
+                  <p className="text-gray-700">
+                    <span className="font-semibold">Address:</span> {hotel.address}
+                  </p>
+                  <p className="text-gray-700">
+                    <span className="font-semibold">City:</span> {hotel.city}
+                  </p>
+                  {hotel.phone && (
+                    <p className="text-gray-700">
+                      <span className="font-semibold">Phone:</span> {hotel.phone}
+                    </p>
+                  )}
+                  {hotel.email && (
+                    <p className="text-gray-700">
+                      <span className="font-semibold">Email:</span> {hotel.email}
+                    </p>
+                  )}
+                  {hotel.country && (
+                    <p className="text-gray-700">
+                      <span className="font-semibold">Country:</span> {hotel.country}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Amenities */}
+              <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-6 border border-blue-100">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+                    <Wifi className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900">Amenities</h3>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {hotel.has_pool && (
+                    <span className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium">
+                      <Waves className="w-4 h-4" />
+                      Swimming Pool
+                    </span>
+                  )}
+                  {hotel.has_gym && (
+                    <span className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium">
+                      <Dumbbell className="w-4 h-4" />
+                      Fitness Center
+                    </span>
+                  )}
+                  {hotel.parking && (
+                    <span className="inline-flex items-center gap-2 bg-purple-100 text-purple-700 px-4 py-2 rounded-full text-sm font-medium">
+                      <Car className="w-4 h-4" />
+                      Free Parking
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Map Section */}
+            <div className="mt-8">
+              <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 border border-gray-200">
+                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-orange-500" />
+                  Hotel Location
+                </h3>
+                <HotelMapLeaflet address={hotel.address} city={hotel.city} />
+              </div>
+            </div>
+          </div>
+
+          {/* Lost & Found Button */}
+          <div className="fixed bottom-8 right-8 z-50">
+            <button
+              onClick={() => {
+                setShowLostFoundModal(true);
+                refreshLostItems(); // Refresh items when modal opens
+              }}
+              className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-4 rounded-full shadow-2xl hover:from-orange-600 hover:to-orange-700 transition-all transform hover:scale-110 flex items-center gap-3 font-medium"
+            >
+              <Package className="w-6 h-6" />
+              Lost & Found
+            </button>
+          </div>
+
+        {/* Rooms Section */}
+          <div className="mb-12">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
+                <Bed className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900">Available Rooms</h2>
+                <p className="text-gray-600">Choose your perfect stay</p>
+              </div>
+            </div>
+            {roomsLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+              </div>
+            ) : rooms.length === 0 ? (
+              <div className="bg-white rounded-3xl shadow-xl p-12 text-center border border-orange-100">
+                <Bed className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 text-lg font-medium">No rooms available for this hotel.</p>
+                <p className="text-gray-400 mt-2">Please check back later or contact us for assistance.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {rooms.map((room) => (
+                  <RoomCard key={room.id} room={room} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Reviews Section */}
+          <div className="mb-12">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
+                <Star className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900">Guest Reviews</h2>
+                <p className="text-gray-600">See what our guests are saying</p>
+              </div>
+            </div>
+            <div className="bg-white rounded-3xl shadow-xl p-8 border border-orange-100">
+              <ReviewsList hotelId={id} />
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Lost & Found Modal */}
+      {showLostFoundModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowLostFoundModal(false)}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-3xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <Package className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">Lost & Found</h2>
+                    <p className="text-orange-100">Report or claim lost items</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowLostFoundModal(false)}
+                  className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center hover:bg-white/30 transition"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              {lfLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+                </div>
+              ) : (
+                <>
+                  {/* Existing Items */}
+                  <div className="mb-8">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4">Recent Lost Items</h3>
+                    {lostItems.length === 0 ? (
+                      <div className="bg-gray-50 rounded-2xl p-8 text-center">
+                        <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500">No lost items reported yet</p>
+                      </div>
+                    ) : (
+                      <div className="grid gap-4">
+                        {lostItems.map((item) => (
+                          <div key={item.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h4 className="font-semibold text-gray-900">{item.item_name}</h4>
+                                <p className="text-gray-600 text-sm mt-1">{item.description}</p>
+                                <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                                  <span>📍 {item.location}</span>
+                                  <span>📅 {item.date_found}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Report New Item Form */}
+                  {isLoggedIn && (
+                    <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 border border-orange-200">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                        <Package className="w-5 h-5 text-orange-600" />
+                        Report a Lost Item
+                      </h3>
+                      <form onSubmit={handleAddItem} className="space-y-4">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Item Name</label>
+                            <input
+                              type="text"
+                              name="item_name"
+                              placeholder="e.g., Wallet, Phone, Keys"
+                              value={newItem.item_name}
+                              onChange={handleInputChange}
+                              required
+                              className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white shadow-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Date Found</label>
+                            <input
+                              type="date"
+                              name="date_found"
+                              value={newItem.date_found}
+                              onChange={handleInputChange}
+                              required
+                              className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white shadow-sm"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                          <textarea
+                            name="description"
+                            placeholder="Provide a detailed description of the item..."
+                            value={newItem.description}
+                            onChange={handleInputChange}
+                            required
+                            rows={3}
+                            className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white shadow-sm resize-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Location Found</label>
+                          <input
+                            type="text"
+                            name="location"
+                            placeholder="e.g., Lobby, Room 205, Pool Area"
+                            value={newItem.location}
+                            onChange={handleInputChange}
+                            required
+                            className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white shadow-sm"
+                          />
+                        </div>
+                        <div className="flex justify-end">
+                          <button
+                            type="submit"
+                            className="bg-gradient-to-r from-orange-600 to-orange-700 text-white px-6 py-3 rounded-xl hover:from-orange-700 hover:to-orange-800 transition-all transform hover:scale-105 shadow-lg font-medium flex items-center gap-2"
+                          >
+                            <Package className="w-5 h-5" />
+                            Submit Report
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  )}
+
+                  {!isLoggedIn && (
+                    <div className="bg-white rounded-2xl p-8 text-center border border-orange-100">
+                      <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500 text-lg font-medium mb-2">Login to Report Lost Items</p>
+                      <p className="text-gray-400">Please sign in to access the lost & found service.</p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

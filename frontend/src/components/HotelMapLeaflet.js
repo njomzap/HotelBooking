@@ -69,9 +69,7 @@ const HotelMapLeaflet = ({ address, city }) => {
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Harta e Lokacionit</h3>
-        </div>
+        
         <div className="flex items-center justify-center h-96 bg-gray-100 rounded-2xl">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
         </div>
@@ -82,7 +80,7 @@ const HotelMapLeaflet = ({ address, city }) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Harta e Lokacionit</h3>
+       
         <button
           onClick={openInMaps}
           className="text-orange-600 hover:text-orange-700 font-medium text-sm flex items-center gap-1"
@@ -90,7 +88,7 @@ const HotelMapLeaflet = ({ address, city }) => {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
           </svg>
-          Hap në OpenStreetMap
+          Open in OpenStreetMap
         </button>
       </div>
       

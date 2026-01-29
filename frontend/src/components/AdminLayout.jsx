@@ -36,11 +36,7 @@ export default function AdminLayout({ children }) {
       </header>
 
       <div className="flex flex-1">
-   
-        <aside className="w-64 bg-white border-r">
-          <Sidebar />
-        </aside>
-
+        <Sidebar />
         <main className="flex-1 p-6">{children}</main>
       </div>
     </div>

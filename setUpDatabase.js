@@ -60,6 +60,36 @@ async function setupDatabase(){
       )
     `);
 
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS lost_and_found (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        hotel_id INT,
+        user_id INT,
+        item_name VARCHAR(255) NOT NULL,
+        description TEXT,
+        date_found DATE,
+        location VARCHAR(255),
+        claimed BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (hotel_id) REFERENCES hotels(id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS reviews (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        hotel_id INT,
+        user_id INT,
+        rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+        comment TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (hotel_id) REFERENCES hotels(id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
     console.log('Tables created successfully');
 
     await connection.end();
