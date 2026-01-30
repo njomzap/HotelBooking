@@ -25,18 +25,11 @@ async function setupDatabase(){
         email VARCHAR(100),
         name VARCHAR(100) NOT NULL,
         birthday DATE NOT NULL,
-        role ENUM('admin','employee','user') DEFAULT 'user'
+        role ENUM('admin','employee','user') DEFAULT 'user',
+        hotel_id INT NULL,
+        FOREIGN KEY (hotel_id) REFERENCES hotels(id) ON DELETE SET NULL
      )
    `);
-
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS hotels (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        address VARCHAR(255),
-        city VARCHAR(50)
-      )
-    `);
 
     await connection.query(`
       CREATE TABLE IF NOT EXISTS rooms (

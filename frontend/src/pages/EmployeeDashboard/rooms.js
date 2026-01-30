@@ -10,6 +10,7 @@ const Rooms = () => {
   const [images, setImages] = useState([]);
   const [errors, setErrors] = useState({});
   const [isDragging, setIsDragging] = useState(false);
+  const [assignedHotelName, setAssignedHotelName] = useState("");
 
   const [formData, setFormData] = useState({
     room_name: "",
@@ -17,38 +18,50 @@ const Rooms = () => {
     capacity: "",
     price: "",
     description: "",
-    hotel_id: "",
   });
 
-  const [hotels, setHotels] = useState([]);
-
-  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+  const assignedHotelId = localStorage.getItem("hotelId");
+  const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
   const axiosInstance = axios.create({
     headers: { Authorization: `Bearer ${token}` },
   });
 
   const fetchRooms = async () => {
     try {
-      const res = await axios.get(API_URL);
+      if (role === "employee" && !assignedHotelId) {
+        setRooms([]);
+        return;
+      }
+
+      const endpoint = role === "employee" && assignedHotelId
+        ? `${API_URL}/hotel/${assignedHotelId}`
+        : API_URL;
+
+      const res = await axiosInstance.get(endpoint);
       setRooms(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error("Fetch rooms error:", error);
     }
   };
 
-  const fetchHotels = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/hotels");
-      setHotels(Array.isArray(res.data) ? res.data : []);
-    } catch (error) {
-      console.error("Fetch hotels error:", error);
-    }
-  };
-
   useEffect(() => {
     fetchRooms();
-    fetchHotels();
   }, []);
+
+  useEffect(() => {
+    const fetchAssignedHotelName = async () => {
+      if (role !== "employee" || !assignedHotelId) return;
+      try {
+        const res = await axios.get(`http://localhost:5000/api/hotels/${assignedHotelId}`);
+        setAssignedHotelName(res.data?.name || "");
+      } catch (error) {
+        console.error("Fetch hotel error:", error);
+      }
+    };
+
+    fetchAssignedHotelName();
+  }, [role, assignedHotelId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -87,18 +100,22 @@ const Rooms = () => {
       capacity: "",
       price: "",
       description: "",
-      hotel_id: "",
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const requiredFields = ["room_name", "room_number", "capacity", "price", "hotel_id"];
+    const requiredFields = ["room_name", "room_number", "capacity", "price"];
     const newErrors = {};
     requiredFields.forEach((field) => {
       if (!formData[field].trim()) newErrors[field] = true;
     });
+
+    if (role === "employee" && !assignedHotelId) {
+      alert("You are not assigned to a hotel. Please contact an administrator.");
+      return;
+    }
 
     if (images.length === 0 && !editingId) {
       newErrors.images = true;
@@ -112,6 +129,15 @@ const Rooms = () => {
 
     const data = new FormData();
     Object.entries(formData).forEach(([key, value]) => data.append(key, value));
+    const hotelIdToUse = role === "employee" ? assignedHotelId : formData.hotel_id;
+    if (hotelIdToUse) {
+      data.append("hotel_id", hotelIdToUse);
+    }
+
+    if (!hotelIdToUse) {
+      alert("Hotel is required");
+      return;
+    }
     for (let i = 0; i < images.length; i++) data.append("images", images[i]);
 
     try {
@@ -136,7 +162,6 @@ const Rooms = () => {
       capacity: room.capacity,
       price: room.price,
       description: room.description,
-      hotel_id: room.hotel_id,
     });
     setImages([]);
     setErrors({});
@@ -242,29 +267,17 @@ const Rooms = () => {
                 )}
               </div>
 
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">Hotel</label>
-                <select
-                  name="hotel_id"
-                  value={formData.hotel_id}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all ${
-                    errors.hotel_id 
-                      ? "border-red-500 bg-red-50" 
-                      : "border-gray-300 hover:border-gray-400"
-                  }`}
-                >
-                  <option value="">Select Hotel</option>
-                  {hotels.map((hotel) => (
-                    <option key={hotel.id} value={hotel.id}>
-                      {hotel.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.hotel_id && (
-                  <p className="text-red-500 text-xs">Required field</p>
-                )}
-              </div>
+              {role === "employee" && (
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700">Assigned Hotel</label>
+                  <div className="px-3 py-2 border rounded-lg bg-gray-50 text-gray-700">
+                    {assignedHotelName || `Hotel ID: ${assignedHotelId || "N/A"}`}
+                  </div>
+                  {!assignedHotelId && (
+                    <p className="text-red-500 text-xs">Contact an administrator to assign a hotel.</p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

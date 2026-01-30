@@ -19,6 +19,30 @@ const computePromoDiscount = (promo, subtotal) => {
   return Math.min(subtotal, Number(promo.discount_value));
 };
 
+const resolveEmployeeHotelId = async (req) => {
+  if (!req?.user || req.user.role !== "employee") {
+    return null;
+  }
+
+  if (req.user.hotelId) {
+    return Number(req.user.hotelId);
+  }
+
+  const [rows] = await db.query("SELECT hotel_id FROM users WHERE id = ?", [req.user.id]);
+  return rows.length ? rows[0].hotel_id : null;
+};
+
+const fetchBookingWithHotel = async (bookingId) => {
+  const [rows] = await db.query(
+    `SELECT b.*, r.hotel_id
+     FROM bookings b
+     JOIN rooms r ON b.room_id = r.id
+     WHERE b.id = ?`,
+    [bookingId]
+  );
+  return rows;
+};
+
 const evaluatePromoCode = async (code, subtotal) => {
   const [rows] = await db.query("SELECT * FROM promo_codes WHERE code = ?", [code.trim()]);
   if (!rows.length) {
@@ -48,19 +72,31 @@ const evaluatePromoCode = async (code, subtotal) => {
 
 exports.getAllBookings = async (req, res) => {
   try {
-    const [rows] = await db.query(`
+    let query = `
       SELECT 
         b.*,
         u.name AS user_name,
         r.room_name,
+        r.hotel_id,
         p.status AS payment_status,
         p.amount AS payment_amount
       FROM bookings b
       LEFT JOIN users u ON b.user_id = u.id
       LEFT JOIN rooms r ON b.room_id = r.id
       LEFT JOIN payments p ON p.booking_id = b.id
-      ORDER BY b.check_in DESC
-    `);
+    `;
+
+    const params = [];
+
+    const employeeHotelId = await resolveEmployeeHotelId(req);
+    if (employeeHotelId) {
+      query += " WHERE r.hotel_id = ?";
+      params.push(employeeHotelId);
+    }
+
+    query += " ORDER BY b.check_in DESC";
+
+    const [rows] = await db.query(query, params);
 
     res.json(rows);
   } catch (err) {
@@ -73,16 +109,20 @@ exports.getBookingById = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const [rows] = await db.query(
-      "SELECT * FROM bookings WHERE id = ?",
-      [id]
-    );
+    const rows = await fetchBookingWithHotel(id);
 
     if (rows.length === 0) {
       return res.status(404).json({ message: "Booking not found" });
     }
 
-    res.json(rows[0]);
+    const booking = rows[0];
+
+    const employeeHotelId = await resolveEmployeeHotelId(req);
+    if (employeeHotelId && employeeHotelId !== booking.hotel_id) {
+      return res.status(403).json({ message: "You can only view bookings for your assigned hotel" });
+    }
+
+    res.json(booking);
   } catch (err) {
     console.error("GET BOOKING BY ID ERROR:", err);
     res.status(500).json({ message: "Failed to fetch booking" });
@@ -291,6 +331,22 @@ exports.getBookingsByRoom = async (req, res) => {
   const { roomId } = req.params;
 
   try {
+    const employeeHotelId = await resolveEmployeeHotelId(req);
+    if (employeeHotelId) {
+      const [roomRows] = await db.query(
+        "SELECT hotel_id FROM rooms WHERE id = ?",
+        [roomId]
+      );
+
+      if (roomRows.length === 0) {
+        return res.status(404).json({ message: "Room not found" });
+      }
+
+      if (roomRows[0].hotel_id !== employeeHotelId) {
+        return res.status(403).json({ message: "You can only view bookings for your assigned hotel" });
+      }
+    }
+
     const [rows] = await db.query(
       `SELECT b.*, u.name AS user_name
        FROM bookings b
@@ -350,6 +406,20 @@ exports.confirmBookingByEmployee = async (req, res) => {
 
     const bookingId = req.params.id;
 
+    const rows = await fetchBookingWithHotel(bookingId);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    const employeeHotelId = await resolveEmployeeHotelId(req);
+    if (!employeeHotelId) {
+      return res.status(403).json({ message: "Employee is not assigned to a hotel" });
+    }
+
+    if (rows[0].hotel_id !== employeeHotelId) {
+      return res.status(403).json({ message: "You can only confirm bookings for your assigned hotel" });
+    }
+
     await db.query(
       "UPDATE bookings SET status = 'confirmed' WHERE id = ?",
       [bookingId]
@@ -370,6 +440,26 @@ exports.updateBookingStatus = async (req, res) => {
   if (!status) return res.status(400).json({ message: "Status is required" });
 
   try {
+    const allowedRoles = ["admin", "employee"];
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const rows = await fetchBookingWithHotel(bookingId);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    if (req.user.role === "employee") {
+      const employeeHotelId = await resolveEmployeeHotelId(req);
+      if (!employeeHotelId) {
+        return res.status(403).json({ message: "Employee is not assigned to a hotel" });
+      }
+      if (rows[0].hotel_id !== employeeHotelId) {
+        return res.status(403).json({ message: "You can only update bookings for your assigned hotel" });
+      }
+    }
+
     const [result] = await db.query(
       "UPDATE bookings SET status = ? WHERE id = ?",
       [status, bookingId]

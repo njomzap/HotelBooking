@@ -5,6 +5,8 @@ import AdminLayout from "../../components/AdminLayout";
 
 export default function Users() {
   const [users, setUsers] = useState([]);
+  const [hotels, setHotels] = useState([]);
+  const [selectedHotels, setSelectedHotels] = useState({});
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
@@ -20,6 +22,15 @@ export default function Users() {
     try {
       const res = await api.get("/users");
       setUsers(res.data);
+      setSelectedHotels((prev) => {
+        const mapping = { ...prev };
+        res.data.forEach((user) => {
+          if (user.hotel_id) {
+            mapping[user.id] = user.hotel_id;
+          }
+        });
+        return mapping;
+      });
     } catch (err) {
       console.error("Failed to fetch users", err);
       if (err.response?.status === 401) {
@@ -34,13 +45,34 @@ export default function Users() {
     }
   };
 
+  const fetchHotels = async () => {
+    try {
+      const res = await api.get("/hotels");
+      setHotels(res.data || []);
+    } catch (err) {
+      console.error("Failed to fetch hotels", err);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchHotels();
   }, []);
 
   const updateRole = async (id, role) => {
     try {
-      await api.patch(`/users/role/${id}`, { role });
+      const payload = { role };
+
+      if (role === "employee") {
+        const hotelId = selectedHotels[id];
+        if (!hotelId) {
+          alert("Please select a hotel for this employee before saving.");
+          return;
+        }
+        payload.hotel_id = hotelId;
+      }
+
+      await api.patch(`/users/role/${id}`, payload);
       fetchUsers(); // Refresh list
     } catch (err) {
       console.error(err);
@@ -60,6 +92,13 @@ export default function Users() {
     user.username.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleHotelChange = (userId, hotelId) => {
+    setSelectedHotels((prev) => ({
+      ...prev,
+      [userId]: hotelId,
+    }));
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -76,31 +115,49 @@ export default function Users() {
 
         {filteredUsers.length === 0 && <p>No users found.</p>}
 
-        {filteredUsers.map((user) => (
-          <div
-            key={user.id}
-            className="flex justify-between bg-white border p-4 rounded-lg"
-          >
-            <div>
-              <p className="font-medium">{user.username}</p>
-              <p className="text-sm text-gray-500">Role: {user.role}</p>
-            </div>
+        {filteredUsers.map((user) => {
+          const nextRole = user.role === "employee" ? "user" : "employee";
+          const assignedHotelName = user.hotel_name || "Not assigned";
 
-            {user.role !== "admin" && (
-              <button
-                onClick={() =>
-                  updateRole(
-                    user.id,
-                    user.role === "employee" ? "user" : "employee"
-                  )
-                }
-                className="bg-orange-500 text-white px-4 py-2 rounded"
-              >
-                {user.role === "employee" ? "Change to User" : "Change to Employee"}
-              </button>
-            )}
-          </div>
-        ))}
+          return (
+            <div
+              key={user.id}
+              className="bg-white border p-4 rounded-lg flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+            >
+              <div>
+                <p className="font-medium text-lg">{user.username}</p>
+                <p className="text-sm text-gray-500 capitalize">Role: {user.role}</p>
+                <p className="text-sm text-gray-500">Hotel: {assignedHotelName}</p>
+              </div>
+
+              {user.role !== "admin" && (
+                <div className="flex flex-col gap-3 w-full md:w-auto">
+                  {nextRole === "employee" && (
+                    <select
+                      value={selectedHotels[user.id] || ""}
+                      onChange={(e) => handleHotelChange(user.id, e.target.value)}
+                      className="border rounded px-3 py-2 focus:ring-2 focus:ring-orange-500"
+                    >
+                      <option value="">Select hotel</option>
+                      {hotels.map((hotel) => (
+                        <option key={hotel.id} value={hotel.id}>
+                          {hotel.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
+                  <button
+                    onClick={() => updateRole(user.id, nextRole)}
+                    className="bg-orange-500 text-white px-4 py-2 rounded"
+                  >
+                    {nextRole === "employee" ? "Change to Employee" : "Change to User"}
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </AdminLayout>
   );

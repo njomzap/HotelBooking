@@ -58,6 +58,7 @@ api.interceptors.response.use(
         localStorage.removeItem('accessToken');
         localStorage.removeItem('role');
         localStorage.removeItem('userId');
+        localStorage.removeItem('hotelId');
         emitAuthChange();
         window.location.href = '/login';
         return Promise.reject(error);
@@ -92,6 +93,9 @@ api.interceptors.response.use(
         if (response.data.user) {
           localStorage.setItem('role', response.data.user.role);
           localStorage.setItem('userId', response.data.user.id);
+          if (Object.prototype.hasOwnProperty.call(response.data.user, 'hotelId')) {
+            localStorage.setItem('hotelId', response.data.user.hotelId ?? '');
+          }
         }
 
         emitAuthChange();
@@ -146,6 +150,9 @@ export const refreshToken = async () => {
     if (response.data.user) {
       localStorage.setItem('role', response.data.user.role);
       localStorage.setItem('userId', response.data.user.id);
+      if (Object.prototype.hasOwnProperty.call(response.data.user, 'hotelId')) {
+        localStorage.setItem('hotelId', response.data.user.hotelId ?? '');
+      }
     }
 
     return response.data;
@@ -168,6 +175,7 @@ export const logout = async () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('role');
     localStorage.removeItem('userId');
+    localStorage.removeItem('hotelId');
     emitAuthChange();
     
     console.log('🗑️ USER LOGGED OUT:');
@@ -189,6 +197,7 @@ export const logoutAll = async () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('role');
     localStorage.removeItem('userId');
+    localStorage.removeItem('hotelId');
     
     console.log('🗑️ USER LOGGED OUT FROM ALL DEVICES:');
     console.log('Timestamp:', new Date().toISOString());

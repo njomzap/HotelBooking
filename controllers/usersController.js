@@ -92,6 +92,7 @@ exports.login = async (req, res) => {
       role: user.role, 
       id: user.id,
       username: user.username,
+      hotelId: user.hotel_id || null,
       message: "Login successful"
     });
   } catch (err) {
@@ -104,7 +105,7 @@ exports.login = async (req, res) => {
 exports.getMe = async (req, res) => {
   try {
     const userId = req.user.id;
-    const [rows] = await pool.query("SELECT id, username, role FROM users WHERE id = ?", [userId]);
+    const [rows] = await pool.query("SELECT id, username, role, hotel_id FROM users WHERE id = ?", [userId]);
     if (rows.length === 0) return res.status(404).json({ message: "User not found" });
     res.json(rows[0]);
   } catch (err) {
@@ -165,7 +166,11 @@ exports.deleteAccount = async (req, res) => {
 
 exports.getAllUsers = async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT id, username, role FROM users");
+    const [rows] = await pool.query(
+      `SELECT u.id, u.username, u.role, u.hotel_id, h.name AS hotel_name
+       FROM users u
+       LEFT JOIN hotels h ON u.hotel_id = h.id`
+    );
     res.json(rows);
   } catch (err) {
     console.error("GET ALL USERS ERROR:", err);
@@ -175,11 +180,25 @@ exports.getAllUsers = async (req, res) => {
 exports.updateRole = async (req, res) => {
   try {
     const { id } = req.params;
-    const { role } = req.body;
+    const { role, hotel_id } = req.body;
 
     if (!role) return res.status(400).json({ message: "Role is required" });
 
-    await pool.query("UPDATE users SET role = ? WHERE id = ?", [role, id]);
+    let hotelAssignment = null;
+
+    if (role === "employee") {
+      if (!hotel_id) {
+        return res.status(400).json({ message: "Employees must be assigned to a hotel" });
+      }
+
+      const [hotelRows] = await pool.query("SELECT id FROM hotels WHERE id = ?", [hotel_id]);
+      if (hotelRows.length === 0) {
+        return res.status(400).json({ message: "Selected hotel does not exist" });
+      }
+      hotelAssignment = hotel_id;
+    }
+
+    await pool.query("UPDATE users SET role = ?, hotel_id = ? WHERE id = ?", [role, hotelAssignment, id]);
 
     res.json({ message: "Role updated successfully" });
   } catch (err) {

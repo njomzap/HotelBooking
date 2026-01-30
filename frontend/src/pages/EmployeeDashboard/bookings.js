@@ -9,7 +9,10 @@ const Bookings = () => {
   const [editingId, setEditingId] = useState(null);
   const [editStatus, setEditStatus] = useState("");
   const [loading, setLoading] = useState(false);
+  const [assignmentError, setAssignmentError] = useState("");
   const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+  const assignedHotelId = localStorage.getItem("hotelId");
 
   const axiosInstance = axios.create({
     headers: { Authorization: token ? `Bearer ${token}` : undefined },
@@ -17,6 +20,14 @@ const Bookings = () => {
 
   const fetchBookings = async () => {
     if (!token) return;
+
+    if (role === "employee" && !assignedHotelId) {
+      setAssignmentError("You are not assigned to a hotel. Please contact an administrator to link your account before managing bookings.");
+      setBookings([]);
+      return;
+    } else {
+      setAssignmentError("");
+    }
 
     try {
       setLoading(true);
@@ -105,6 +116,20 @@ const Bookings = () => {
   };
 
   if (!token) return <p className="text-center text-red-500 mt-4">You are not logged in.</p>;
+
+  if (assignmentError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center p-6">
+        <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl p-8 text-center border border-dashed border-orange-200">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-3xl">
+            !
+          </div>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Hotel assignment required</h2>
+          <p className="text-gray-600">{assignmentError}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

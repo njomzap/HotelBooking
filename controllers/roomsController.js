@@ -3,6 +3,19 @@ const path = require("path");
 const pool = require("../db");
 
 
+const resolveEmployeeHotelId = async (req) => {
+  if (!req?.user || req.user.role !== "employee") {
+    return null;
+  }
+
+  if (req.user.hotelId) {
+    return req.user.hotelId;
+  }
+
+  const [rows] = await pool.query("SELECT hotel_id FROM users WHERE id = ?", [req.user.id]);
+  return rows.length ? rows[0].hotel_id : null;
+};
+
 const getAllRooms = async (req, res) => {
   try {
     const [rooms] = await pool.query("SELECT * FROM rooms");
@@ -27,6 +40,11 @@ const getRoomsByHotel = async (req, res) => {
   const { hotelId } = req.params;
 
   try {
+    const employeeHotelId = await resolveEmployeeHotelId(req);
+    if (employeeHotelId && employeeHotelId.toString() !== hotelId) {
+      return res.status(403).json({ error: "You can only view rooms for your assigned hotel" });
+    }
+
     const [rooms] = await pool.query(
       "SELECT * FROM rooms WHERE hotel_id = ?",
       [hotelId]
@@ -82,12 +100,24 @@ const createRoom = async (req, res) => {
     const { hotel_id, room_name, room_number, description, price, capacity } =
       req.body;
 
+    const employeeHotelId = await resolveEmployeeHotelId(req);
+    const isEmployee = req.user?.role === "employee";
+    const effectiveHotelId = isEmployee ? employeeHotelId : hotel_id;
+
+    if (!effectiveHotelId) {
+      return res.status(400).json({ error: "hotel_id is required" });
+    }
+
+    if (isEmployee && !employeeHotelId) {
+      return res.status(403).json({ error: "Employee is not assigned to a hotel" });
+    }
+
     const [result] = await pool.query(
       `INSERT INTO rooms 
        (hotel_id, room_name, room_number, description, price, capacity) 
        VALUES (?, ?, ?, ?, ?, ?)`,
       [
-        Number(hotel_id),
+        Number(effectiveHotelId),
         room_name,
         room_number,
         description,
@@ -126,12 +156,31 @@ const updateRoom = async (req, res) => {
     const { hotel_id, room_name, room_number, description, price, capacity } =
       req.body;
 
+    const [existingRoomRows] = await pool.query(
+      "SELECT hotel_id FROM rooms WHERE id = ?",
+      [id]
+    );
+
+    if (existingRoomRows.length === 0) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+
+    const existingHotelId = existingRoomRows[0].hotel_id;
+    const employeeHotelId = await resolveEmployeeHotelId(req);
+    const isEmployee = req.user?.role === "employee";
+
+    if (isEmployee && employeeHotelId !== existingHotelId) {
+      return res.status(403).json({ error: "You can only update rooms for your assigned hotel" });
+    }
+
+    const effectiveHotelId = isEmployee ? existingHotelId : (hotel_id ?? existingHotelId);
+
     const [result] = await pool.query(
       `UPDATE rooms 
        SET hotel_id = ?, room_name = ?, room_number = ?, description = ?, price = ?, capacity = ?
        WHERE id = ?`,
       [
-        Number(hotel_id),
+        Number(effectiveHotelId),
         room_name,
         room_number,
         description,
@@ -182,6 +231,20 @@ const deleteRoom = async (req, res) => {
   const { id } = req.params;
 
   try {
+    const [existingRoomRows] = await pool.query(
+      "SELECT hotel_id FROM rooms WHERE id = ?",
+      [id]
+    );
+
+    if (existingRoomRows.length === 0) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+
+    const employeeHotelId = await resolveEmployeeHotelId(req);
+    if (employeeHotelId && employeeHotelId !== existingRoomRows[0].hotel_id) {
+      return res.status(403).json({ error: "You can only delete rooms for your assigned hotel" });
+    }
+
     const [images] = await pool.query(
       "SELECT image_url FROM room_images WHERE room_id = ?",
       [id]

@@ -24,6 +24,11 @@ export default function Login({ setRole }) {
       localStorage.setItem("token", res.data.accessToken);
       localStorage.setItem("role", res.data.role);
       localStorage.setItem("userId", res.data.id);
+      if (res.data.hotelId !== undefined) {
+        localStorage.setItem("hotelId", res.data.hotelId ?? "");
+      } else {
+        localStorage.removeItem("hotelId");
+      }
 
       // Log token storage (for debugging)
       console.log('🔑 TOKENS CREATED & STORED:');
