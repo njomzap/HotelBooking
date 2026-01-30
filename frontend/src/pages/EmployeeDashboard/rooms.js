@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../services/tokenService";
 import RoomCard from "../../components/RoomCard";
 
-const API_URL = "http://localhost:5000/api/rooms";
+const API_URL = "/rooms";
 
 const Rooms = () => {
   const [rooms, setRooms] = useState([]);
@@ -22,10 +22,7 @@ const Rooms = () => {
 
   const role = localStorage.getItem("role");
   const assignedHotelId = localStorage.getItem("hotelId");
-  const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-  const axiosInstance = axios.create({
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const token = localStorage.getItem("accessToken");
 
   const fetchRooms = async () => {
     try {
@@ -38,10 +35,10 @@ const Rooms = () => {
         ? `${API_URL}/hotel/${assignedHotelId}`
         : API_URL;
 
-      const res = await axiosInstance.get(endpoint);
-      setRooms(Array.isArray(res.data) ? res.data : []);
+      const res = await api.get(endpoint);
+      setRooms(res.data);
     } catch (error) {
-      console.error("Fetch rooms error:", error);
+      console.error("Error fetching rooms:", error);
     }
   };
 
@@ -53,7 +50,7 @@ const Rooms = () => {
     const fetchAssignedHotelName = async () => {
       if (role !== "employee" || !assignedHotelId) return;
       try {
-        const res = await axios.get(`http://localhost:5000/api/hotels/${assignedHotelId}`);
+        const res = await api.get(`/hotels/${assignedHotelId}`);
         setAssignedHotelName(res.data?.name || "");
       } catch (error) {
         console.error("Fetch hotel error:", error);
@@ -69,7 +66,10 @@ const Rooms = () => {
     setErrors({ ...errors, [name]: false });
   };
 
-  const handleImageChange = (e) => setImages(e.target.files);
+  const handleImageChange = (e) => {
+    const filesArray = Array.from(e.target.files);
+    setImages(filesArray);
+  };
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -85,7 +85,8 @@ const Rooms = () => {
     e.preventDefault();
     setIsDragging(false);
     const droppedFiles = e.dataTransfer.files;
-    setImages(droppedFiles);
+    const filesArray = Array.from(droppedFiles);
+    setImages(filesArray);
     setErrors({ ...errors, images: false });
   };
 
@@ -109,7 +110,9 @@ const Rooms = () => {
     const requiredFields = ["room_name", "room_number", "capacity", "price"];
     const newErrors = {};
     requiredFields.forEach((field) => {
-      if (!formData[field].trim()) newErrors[field] = true;
+      if (typeof formData[field] !== 'string' || !formData[field].trim()) {
+        newErrors[field] = true;
+      }
     });
 
     if (role === "employee" && !assignedHotelId) {
@@ -138,13 +141,17 @@ const Rooms = () => {
       alert("Hotel is required");
       return;
     }
-    for (let i = 0; i < images.length; i++) data.append("images", images[i]);
+    
+    // Add all images
+    for (let i = 0; i < images.length; i++) {
+      data.append("images", images[i]);
+    }
 
     try {
       if (editingId) {
-        await axiosInstance.put(`${API_URL}/${editingId}`, data);
+        await api.put(`${API_URL}/${editingId}`, data);
       } else {
-        await axiosInstance.post(API_URL, data);
+        await api.post(API_URL, data);
       }
       resetForm();
       fetchRooms();
@@ -170,7 +177,7 @@ const Rooms = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this room?")) return;
     try {
-      await axiosInstance.delete(`${API_URL}/${id}`);
+      await api.delete(`${API_URL}/${id}`);
       fetchRooms();
     } catch {
       alert("Delete failed");
@@ -296,34 +303,17 @@ const Rooms = () => {
               <label className="block text-sm font-medium text-gray-700">
                 Room Images
               </label>
-              <div
-                className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-all cursor-pointer ${
-                  isDragging 
-                    ? "border-orange-500 bg-orange-50" 
-                    : errors.images 
-                      ? "border-red-500 bg-red-50" 
-                      : "border-gray-300 hover:border-orange-400 hover:bg-orange-50"
-                }`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
                 <input
                   type="file"
                   multiple
                   accept="image/*"
                   onChange={handleImageChange}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  className="w-full"
                 />
-                <div className="pointer-events-none">
-                  <svg className="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  <p className="text-sm text-gray-600">
-                    {isDragging ? "Drop images here" : "Drag & drop images here, or click to select"}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 10MB</p>
-                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Hold Ctrl/Cmd and click to select multiple images
+                </p>
               </div>
               {errors.images && (
                 <p className="text-red-500 text-xs">At least one image is required</p>

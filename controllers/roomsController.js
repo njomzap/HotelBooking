@@ -231,42 +231,52 @@ const deleteRoom = async (req, res) => {
   const { id } = req.params;
 
   try {
+    console.log('🗑️ Deleting room with ID:', id);
+    
     const [existingRoomRows] = await pool.query(
       "SELECT hotel_id FROM rooms WHERE id = ?",
       [id]
     );
 
     if (existingRoomRows.length === 0) {
+      console.log('❌ Room not found');
       return res.status(404).json({ error: "Room not found" });
     }
 
     const employeeHotelId = await resolveEmployeeHotelId(req);
     if (employeeHotelId && employeeHotelId !== existingRoomRows[0].hotel_id) {
+      console.log('❌ Employee not authorized for this hotel');
       return res.status(403).json({ error: "You can only delete rooms for your assigned hotel" });
     }
 
+    console.log('📸 Fetching images for room:', id);
     const [images] = await pool.query(
       "SELECT image_url FROM room_images WHERE room_id = ?",
       [id]
     );
 
-    images.forEach(img => {
-      const filePath = path.join(__dirname, "..", img.image_url);
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    });
-
+    console.log('📁 Found images:', images.length);
+    
+    // Temporarily skip file deletion to test database operations
+    console.log('⚠️ Skipping file deletion for debugging');
+    
+    console.log('🗑️ Deleting room images from database');
     await pool.query("DELETE FROM room_images WHERE room_id = ?", [id]);
 
+    console.log('🗑️ Deleting room from database');
     const [result] = await pool.query("DELETE FROM rooms WHERE id = ?", [id]);
 
     if (result.affectedRows === 0) {
+      console.log('❌ Room not found in database');
       return res.status(404).json({ error: "Room not found" });
     }
 
+    console.log('✅ Room deleted successfully');
     res.json({ message: "Room deleted successfully" });
   } catch (error) {
     console.error("DELETE ROOM ERROR:", error);
-    res.status(500).json({ error: "Server error" });
+    console.error("Stack trace:", error.stack);
+    res.status(500).json({ error: "Server error", details: error.message });
   }
 };
 
