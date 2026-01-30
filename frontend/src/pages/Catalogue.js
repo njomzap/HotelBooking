@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useSearchParams } from "react-router-dom";
 import HotelCard from "../components/HotelCard";
 
 const Catalogue = ({ user }) => {
@@ -7,8 +8,23 @@ const Catalogue = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
+    
+    const search = searchParams.get('search');
+    const checkIn = searchParams.get('checkIn');
+    const checkOut = searchParams.get('checkOut');
+    const guests = searchParams.get('guests');
+    
+    
+    if (search) {
+      setSearchTerm(search);
+    }
+    if (searchParams.get('city')) {
+      setSelectedCity(searchParams.get('city'));
+    }
+
     const fetchHotels = async () => {
       try {
         const res = await axios.get("http://localhost:5000/api/hotels");
@@ -23,12 +39,13 @@ const Catalogue = ({ user }) => {
     };
 
     fetchHotels();
-  }, []);
+  }, [searchParams]);
 
   const filteredHotels = hotels.filter(hotel => {
     const matchesSearch = hotel.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          hotel.hotel_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         hotel.city?.toLowerCase().includes(searchTerm.toLowerCase());
+                         hotel.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         hotel.address?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCity = !selectedCity || hotel.city === selectedCity;
     return matchesSearch && matchesCity;
   });
@@ -37,7 +54,7 @@ const Catalogue = ({ user }) => {
 
   return (
     <div className="w-full">
-      {/* Hero Section - Similar to Homepage */}
+     
       <div className="relative w-full h-[75vh]">
         <img
           src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1950&q=80"
@@ -63,7 +80,6 @@ const Catalogue = ({ user }) => {
             Find the perfect place for your next unforgettable experience.
           </p>
           
-          {/* Search Bar */}
           <div className="w-full max-w-4xl">
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-2 border border-white/20">
               <div className="bg-white rounded-xl overflow-hidden">
@@ -100,7 +116,7 @@ const Catalogue = ({ user }) => {
         </div>
       </div>
 
-      {/* Results Section */}
+      
       <div className="bg-gray-50 py-12">
         <div className="max-w-7xl mx-auto px-6">
           <div className="mb-8">

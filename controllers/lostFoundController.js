@@ -57,7 +57,7 @@ const createItem = async (req, res) => {
     
     console.log("Insert result:", result);
     
-    // Return the created item with user information
+   
     const [newItem] = await pool.query(
       `SELECT lf.*, u.username, u.email, u.name 
        FROM lost_and_found lf 
@@ -77,18 +77,18 @@ const createItem = async (req, res) => {
 
 const updateItem = async (req, res) => {
   try {
-    const { claimed } = req.body; // Only update claimed status
+    const { claimed } = req.body; 
     const { id } = req.params;
     
     console.log("Updating item:", id, "with claimed status:", claimed);
     
-    // Check if item exists first
+ 
     const [existingItem] = await pool.query("SELECT id FROM lost_and_found WHERE id = ?", [id]);
     if (existingItem.length === 0) {
       return res.status(404).json({ message: "Item not found" });
     }
     
-    // Update only the claimed status
+    
     await pool.query(
       "UPDATE lost_and_found SET claimed = ? WHERE id = ?",
       [claimed, id]
@@ -96,7 +96,7 @@ const updateItem = async (req, res) => {
     
     console.log("Update successful for item:", id);
     
-    // Return updated item
+  
     const [updatedItem] = await pool.query(
       `SELECT lf.*, u.username, u.email, u.name 
        FROM lost_and_found lf 
