@@ -19,6 +19,18 @@ const computePromoDiscount = (promo, subtotal) => {
   return Math.min(subtotal, Number(promo.discount_value));
 };
 
+const toDateString = (value) => {
+  if (!value) return null;
+  if (typeof value === "string") {
+    return value.split("T")[0];
+  }
+  try {
+    return new Date(value).toISOString().split("T")[0];
+  } catch (err) {
+    return null;
+  }
+};
+
 const resolveEmployeeHotelId = async (req) => {
   if (!req?.user || req.user.role !== "employee") {
     return null;
@@ -43,15 +55,26 @@ const fetchBookingWithHotel = async (bookingId) => {
   return rows;
 };
 
-const evaluatePromoCode = async (code, subtotal) => {
+const evaluatePromoCode = async (code, subtotal, roomHotelId) => {
   const [rows] = await db.query("SELECT * FROM promo_codes WHERE code = ?", [code.trim()]);
   if (!rows.length) {
     throw new Error("Promo code not found");
   }
 
   const promo = normalizePromoRow(rows[0]);
-  const now = new Date();
-  if (now < new Date(promo.start_date) || now > new Date(promo.end_date)) {
+
+  if (promo.hotel_id && promo.hotel_id !== roomHotelId) {
+    throw new Error("Promo code applies to a different hotel");
+  }
+  const todayStr = new Date().toISOString().split("T")[0];
+  const promoStart = toDateString(promo.start_date);
+  const promoEnd = toDateString(promo.end_date);
+
+  if (!promoStart || !promoEnd) {
+    throw new Error("Promo code has invalid activation dates");
+  }
+
+  if (todayStr < promoStart || todayStr > promoEnd) {
     throw new Error("Promo code is not active");
   }
 
@@ -184,7 +207,7 @@ exports.createBooking = async (req, res) => {
 
     if (promo_code) {
       try {
-        const promoResult = await evaluatePromoCode(promo_code, subtotal);
+        const promoResult = await evaluatePromoCode(promo_code, subtotal, room.hotel_id);
         discountAmount = promoResult.discount_amount;
         appliedPromoId = promoResult.promoId;
       } catch (promoErr) {

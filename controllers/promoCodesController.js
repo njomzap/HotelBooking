@@ -9,6 +9,8 @@ const normalizeRow = (row) => ({
   end_date: row.end_date,
   usage_limit: row.usage_limit,
   usage_count: row.usage_count,
+  hotel_id: row.hotel_id,
+  hotel_name: row.hotel_name || null,
   active: Boolean(row.active),
   created_at: row.created_at,
   updated_at: row.updated_at,
@@ -21,6 +23,7 @@ const validatePayload = ({
   start_date,
   end_date,
   usage_limit,
+  hotel_id,
 }) => {
   if (!code || typeof code !== "string") {
     throw new Error("Code is required");
@@ -59,15 +62,71 @@ const validatePayload = ({
       throw new Error("usage_limit must be a positive integer or null");
     }
   }
+
+  if (hotel_id !== null && hotel_id !== undefined && hotel_id !== "") {
+    const parsedHotelId = Number(hotel_id);
+    if (Number.isNaN(parsedHotelId) || parsedHotelId <= 0) {
+      throw new Error("hotel_id must be a positive number or null");
+    }
+  }
+};
+
+const ensureHotelExists = async (hotelId) => {
+  if (hotelId === null || hotelId === undefined) {
+    return null;
+  }
+
+  const numericId = Number(hotelId);
+  if (Number.isNaN(numericId)) {
+    throw new Error("Invalid hotel_id");
+  }
+
+  const [rows] = await db.query("SELECT id FROM hotels WHERE id = ?", [numericId]);
+  if (!rows.length) {
+    throw new Error("Selected hotel does not exist");
+  }
+
+  return numericId;
+};
+
+const resolveTargetHotelId = async ({ hotel_id, room_id }) => {
+  if (room_id) {
+    const [rooms] = await db.query("SELECT hotel_id FROM rooms WHERE id = ?", [room_id]);
+    if (!rooms.length) {
+      throw new Error("Room not found");
+    }
+    return rooms[0].hotel_id;
+  }
+
+  if (hotel_id) {
+    const validatedHotelId = await ensureHotelExists(hotel_id);
+    return validatedHotelId;
+  }
+
+  return null;
+};
+
+const resolveEmployeeHotelId = async (req) => {
+  if (!req?.user || req.user.role !== "employee") {
+    return null;
+  }
+
+  if (req.user.hotelId) {
+    return Number(req.user.hotelId);
+  }
+
+  const [rows] = await db.query("SELECT hotel_id FROM users WHERE id = ?", [req.user.id]);
+  return rows.length ? rows[0].hotel_id : null;
 };
 
 exports.getActivePromoCodes = async (req, res) => {
   try {
-    const today = new Date();
-    const formattedDate = today.toISOString().split("T")[0];
+    const formattedDate = toDateString(new Date());
+    const includeHotelScoped = req.query.includeHotelScoped !== "false";
     const [rows] = await db.query(
-      `SELECT *
-       FROM promo_codes
+      `SELECT pc.*, h.name AS hotel_name
+       FROM promo_codes pc
+       LEFT JOIN hotels h ON pc.hotel_id = h.id
        WHERE active = 1
          AND start_date <= ?
          AND end_date >= ?
@@ -75,7 +134,11 @@ exports.getActivePromoCodes = async (req, res) => {
       [formattedDate, formattedDate]
     );
 
-    res.json(rows.map(normalizeRow));
+    const filteredRows = includeHotelScoped
+      ? rows
+      : rows.filter(row => row.hotel_id === null);
+
+    res.json(filteredRows.map(normalizeRow));
   } catch (err) {
     console.error("GET ACTIVE PROMO CODES ERROR:", err);
     res.status(500).json({ message: "Failed to load promo codes" });
@@ -84,8 +147,23 @@ exports.getActivePromoCodes = async (req, res) => {
 
 exports.getAllPromoCodes = async (req, res) => {
   try {
-    const [rows] = await db.query("SELECT * FROM promo_codes ORDER BY created_at DESC");
-    res.json(rows.map(normalizeRow));
+    const [rows] = await db.query(
+      `SELECT pc.*, h.name AS hotel_name
+       FROM promo_codes pc
+       LEFT JOIN hotels h ON pc.hotel_id = h.id`
+    );
+
+    let filteredRows = rows;
+    if (req.user?.role === "employee") {
+      const employeeHotelId = await resolveEmployeeHotelId(req);
+      if (!employeeHotelId) {
+        return res.status(403).json({ message: "Employee must be assigned to a hotel" });
+      }
+      filteredRows = rows.filter(row => row.hotel_id === employeeHotelId);
+    }
+
+    filteredRows.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    res.json(filteredRows.map(normalizeRow));
   } catch (err) {
     console.error("GET PROMO CODES ERROR:", err);
     res.status(500).json({ message: "Failed to fetch promo codes" });
@@ -94,11 +172,26 @@ exports.getAllPromoCodes = async (req, res) => {
 
 exports.getPromoCodeById = async (req, res) => {
   try {
-    const [rows] = await db.query("SELECT * FROM promo_codes WHERE id = ?", [req.params.id]);
+    const [rows] = await db.query(
+      `SELECT pc.*, h.name AS hotel_name
+       FROM promo_codes pc
+       LEFT JOIN hotels h ON pc.hotel_id = h.id
+       WHERE pc.id = ?`,
+      [req.params.id]
+    );
     if (!rows.length) {
       return res.status(404).json({ message: "Promo code not found" });
     }
-    res.json(normalizeRow(rows[0]));
+    const promo = rows[0];
+
+    if (req.user?.role === "employee") {
+      const employeeHotelId = await resolveEmployeeHotelId(req);
+      if (!employeeHotelId || promo.hotel_id !== employeeHotelId) {
+        return res.status(403).json({ message: "You can only access promo codes for your hotel" });
+      }
+    }
+
+    res.json(normalizeRow(promo));
   } catch (err) {
     console.error("GET PROMO CODE ERROR:", err);
     res.status(500).json({ message: "Failed to fetch promo code" });
@@ -117,13 +210,34 @@ exports.createPromoCode = async (req, res) => {
       end_date,
       usage_limit = null,
       active = true,
+      hotel_id = null,
     } = req.body;
+
+    let normalizedHotelId;
+    if (req.user?.role === "employee") {
+      const employeeHotelId = await resolveEmployeeHotelId(req);
+      if (!employeeHotelId) {
+        return res.status(403).json({ message: "Employee must be assigned to a hotel" });
+      }
+      normalizedHotelId = employeeHotelId;
+    } else {
+      normalizedHotelId = hotel_id === "" ? null : await ensureHotelExists(hotel_id);
+    }
 
     await db.query(
       `INSERT INTO promo_codes
-       (code, discount_type, discount_value, start_date, end_date, usage_limit, usage_count, active)
-       VALUES (?, ?, ?, ?, ?, ?, 0, ?)` ,
-      [code.trim(), discount_type, discount_value, start_date, end_date, usage_limit, active ? 1 : 0]
+       (code, discount_type, discount_value, start_date, end_date, usage_limit, usage_count, active, hotel_id)
+       VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)` ,
+      [
+        code.trim(),
+        discount_type,
+        discount_value,
+        start_date,
+        end_date,
+        usage_limit,
+        active ? 1 : 0,
+        normalizedHotelId,
+      ]
     );
 
     res.status(201).json({ message: "Promo code created" });
@@ -145,14 +259,46 @@ exports.updatePromoCode = async (req, res) => {
       end_date,
       usage_limit = null,
       active = true,
+      hotel_id = null,
     } = req.body;
+
+    let normalizedHotelId;
+    if (req.user?.role === "employee") {
+      const employeeHotelId = await resolveEmployeeHotelId(req);
+      if (!employeeHotelId) {
+        return res.status(403).json({ message: "Employee must be assigned to a hotel" });
+      }
+
+      const [existingRows] = await db.query("SELECT hotel_id FROM promo_codes WHERE id = ?", [req.params.id]);
+      if (!existingRows.length) {
+        return res.status(404).json({ message: "Promo code not found" });
+      }
+
+      if (existingRows[0].hotel_id !== employeeHotelId) {
+        return res.status(403).json({ message: "You can only update promo codes for your hotel" });
+      }
+
+      normalizedHotelId = employeeHotelId;
+    } else {
+      normalizedHotelId = hotel_id === "" ? null : await ensureHotelExists(hotel_id);
+    }
 
     const [result] = await db.query(
       `UPDATE promo_codes
        SET code = ?, discount_type = ?, discount_value = ?, start_date = ?, end_date = ?,
-           usage_limit = ?, active = ?
+           usage_limit = ?, active = ?, hotel_id = ?
        WHERE id = ?`,
-      [code.trim(), discount_type, discount_value, start_date, end_date, usage_limit, active ? 1 : 0, req.params.id]
+      [
+        code.trim(),
+        discount_type,
+        discount_value,
+        start_date,
+        end_date,
+        usage_limit,
+        active ? 1 : 0,
+        normalizedHotelId,
+        req.params.id,
+      ]
     );
 
     if (!result.affectedRows) {
@@ -168,6 +314,22 @@ exports.updatePromoCode = async (req, res) => {
 
 exports.deletePromoCode = async (req, res) => {
   try {
+    if (req.user?.role === "employee") {
+      const employeeHotelId = await resolveEmployeeHotelId(req);
+      if (!employeeHotelId) {
+        return res.status(403).json({ message: "Employee must be assigned to a hotel" });
+      }
+
+      const [rows] = await db.query("SELECT hotel_id FROM promo_codes WHERE id = ?", [req.params.id]);
+      if (!rows.length) {
+        return res.status(404).json({ message: "Promo code not found" });
+      }
+
+      if (rows[0].hotel_id !== employeeHotelId) {
+        return res.status(403).json({ message: "You can only delete promo codes for your hotel" });
+      }
+    }
+
     const [result] = await db.query("DELETE FROM promo_codes WHERE id = ?", [req.params.id]);
     if (!result.affectedRows) {
       return res.status(404).json({ message: "Promo code not found" });
@@ -187,9 +349,27 @@ const computeDiscount = (promo, subtotal) => {
   return Math.min(subtotal, Number(promo.discount_value));
 };
 
+const toDateString = (value) => {
+  if (!value) return null;
+
+  if (typeof value === "string") {
+    return value.includes("T") ? value.split("T")[0] : value;
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 exports.applyPromoCode = async (req, res) => {
   try {
-    const { code, subtotal } = req.body;
+    const { code, subtotal, room_id, hotel_id } = req.body;
     if (!code) {
       return res.status(400).json({ message: "Promo code is required" });
     }
@@ -200,8 +380,21 @@ exports.applyPromoCode = async (req, res) => {
     }
 
     const promo = normalizeRow(rows[0]);
-    const today = new Date();
-    if (today < new Date(promo.start_date) || today > new Date(promo.end_date)) {
+
+    const targetHotelId = await resolveTargetHotelId({ hotel_id, room_id });
+    if (promo.hotel_id && (!targetHotelId || promo.hotel_id !== targetHotelId)) {
+      return res.status(400).json({ message: "This promo code applies to a different hotel" });
+    }
+
+    const todayStr = toDateString(new Date());
+    const promoStart = toDateString(promo.start_date);
+    const promoEnd = toDateString(promo.end_date);
+
+    if (!promoStart || !promoEnd) {
+      return res.status(400).json({ message: "Promo code has invalid activation dates" });
+    }
+
+    if (todayStr < promoStart || todayStr > promoEnd) {
       return res.status(400).json({ message: "Promo code is not active" });
     }
 

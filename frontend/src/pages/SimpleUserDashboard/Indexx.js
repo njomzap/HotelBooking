@@ -25,7 +25,7 @@ export default function SimpleUserDashboard() {
         const [meRes, bookingsRes, promoRes] = await Promise.all([
           api.get("/users/me"),
           api.get("/bookings/user/me"),
-          api.get("/promo-codes/public/active"),
+          api.get("/promo-codes/public/active?includeHotelScoped=true"),
         ]);
 
         setUser(meRes.data);
@@ -215,6 +215,9 @@ export default function SimpleUserDashboard() {
                       {promo.discount_type === "percentage"
                         ? `${promo.discount_value}% off`
                         : `$${Number(promo.discount_value).toFixed(2)} off`}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Scope: {promo.hotel_name ? promo.hotel_name : "All hotels"}
                     </p>
                     <p className="text-xs text-gray-400">
                       Ends on {new Date(promo.end_date).toLocaleDateString()}

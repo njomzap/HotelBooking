@@ -34,21 +34,21 @@ router.get(
 router.post(
   "/",
   authMiddleware,
-  requireRole("admin"),
+  requireAnyRole(["admin", "employee"]),
   createPromoCode
 );
 
 router.put(
   "/:id",
   authMiddleware,
-  requireRole("admin"),
+  requireAnyRole(["admin", "employee"]),
   updatePromoCode
 );
 
 router.delete(
   "/:id",
   authMiddleware,
-  requireRole("admin"),
+  requireAnyRole(["admin", "employee"]),
   deletePromoCode
 );
 

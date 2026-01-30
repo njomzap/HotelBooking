@@ -1,6 +1,5 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import AdminLayout from "../../components/AdminLayout";
 
 const API_URL = "http://localhost:5000/api/promo-codes";
 
@@ -12,69 +11,52 @@ const defaultForm = {
   end_date: "",
   usage_limit: "",
   active: true,
-  hotel_id: "",
 };
 
 const formatDateInput = (dateString) => {
   if (!dateString) return "";
-
-  // Ensure values returned from the API (which include timezone info) are converted
-  // to the user's local date to prevent off-by-one-day shifts in the date picker.
-  const parsedDate = new Date(dateString);
-  if (Number.isNaN(parsedDate.getTime())) {
-    return "";
-  }
-
-  const timezoneAdjusted = new Date(
-    parsedDate.getTime() - parsedDate.getTimezoneOffset() * 60000
-  );
-
-  return timezoneAdjusted.toISOString().split("T")[0];
+  return dateString.split("T")[0];
 };
 
-export default function PromoCodes() {
-  const token = localStorage.getItem("token");
+export default function EmployeePromoCodes() {
+  const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
+  const assignedHotelId = localStorage.getItem("hotelId");
+
   const [promoCodes, setPromoCodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [assignmentError, setAssignmentError] = useState("");
   const [search, setSearch] = useState("");
   const [form, setForm] = useState(defaultForm);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [hotels, setHotels] = useState([]);
-  const [hotelsError, setHotelsError] = useState(null);
 
   const axiosInstance = useMemo(() => {
     return axios.create({
       baseURL: API_URL,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: token ? `Bearer ${token}` : undefined },
     });
   }, [token]);
 
-  const fetchHotels = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/hotels", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setHotels(res.data || []);
-      setHotelsError(null);
-    } catch (err) {
-      console.error("PROMO HOTELS FETCH ERROR:", err);
-      setHotelsError("Failed to load hotels");
-    }
-  };
-
   const fetchPromoCodes = async () => {
+    if (!token) return;
+
+    if (!assignedHotelId) {
+      setAssignmentError("You are not assigned to a hotel yet. Please contact an administrator.");
+      setPromoCodes([]);
+      setLoading(false);
+      return;
+    }
+
     try {
+      setAssignmentError("");
       setLoading(true);
       const res = await axiosInstance.get("/");
       setPromoCodes(res.data || []);
       setError(null);
     } catch (err) {
-      console.error("PROMO FETCH ERROR:", err);
+      console.error("EMPLOYEE PROMO FETCH ERROR:", err);
       setError(err.response?.data?.message || "Failed to load promo codes");
     } finally {
       setLoading(false);
@@ -82,10 +64,8 @@ export default function PromoCodes() {
   };
 
   useEffect(() => {
-    if (!token) return;
     fetchPromoCodes();
-    fetchHotels();
-  }, [token]);
+  }, [token, assignedHotelId]);
 
   const openCreateModal = () => {
     setForm(defaultForm);
@@ -102,7 +82,6 @@ export default function PromoCodes() {
       end_date: formatDateInput(promo.end_date),
       usage_limit: promo.usage_limit ?? "",
       active: promo.active,
-      hotel_id: promo.hotel_id ?? "",
     });
     setEditingId(promo.id);
     setIsModalOpen(true);
@@ -129,19 +108,18 @@ export default function PromoCodes() {
       ...form,
       discount_value: Number(form.discount_value),
       usage_limit: form.usage_limit ? Number(form.usage_limit) : null,
-      hotel_id: form.hotel_id === "global" || form.hotel_id === "" ? null : Number(form.hotel_id),
     };
 
     try {
       if (editingId) {
         await axiosInstance.put(`/${editingId}`, payload);
       } else {
-        await axiosInstance.post("/", payload);
+        await axiosInstance.post(`/`, payload);
       }
       closeModal();
       fetchPromoCodes();
     } catch (err) {
-      console.error("PROMO SAVE ERROR:", err);
+      console.error("EMPLOYEE PROMO SAVE ERROR:", err);
       alert(err.response?.data?.message || "Failed to save promo code");
     }
   };
@@ -153,7 +131,7 @@ export default function PromoCodes() {
       setConfirmDeleteId(null);
       fetchPromoCodes();
     } catch (err) {
-      console.error("PROMO DELETE ERROR:", err);
+      console.error("EMPLOYEE PROMO DELETE ERROR:", err);
       alert(err.response?.data?.message || "Failed to delete promo code");
     }
   };
@@ -161,18 +139,46 @@ export default function PromoCodes() {
   const filteredPromos = useMemo(() => {
     if (!search.trim()) return promoCodes;
     const term = search.toLowerCase();
-    return promoCodes.filter((promo) =>
-      promo.code.toLowerCase().includes(term)
-    );
+    return promoCodes.filter((promo) => promo.code.toLowerCase().includes(term));
   }, [promoCodes, search]);
 
+  if (!token) {
+    return <p className="text-center text-red-500 mt-4">You are not logged in.</p>;
+  }
+
+  if (assignmentError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center p-6">
+        <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl p-8 text-center border border-dashed border-orange-200">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-3xl">
+            !
+          </div>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Hotel assignment required</h2>
+          <p className="text-gray-600">{assignmentError}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading promo codes...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <AdminLayout>
-      <div className="space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 p-6">
+      <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold text-gray-900">Promo Codes</h1>
-            <p className="text-gray-500">Create and manage discount codes for bookings.</p>
+            <p className="text-sm uppercase tracking-wide text-orange-500">Promotions</p>
+            <h1 className="text-3xl font-bold text-gray-900">Hotel Promo Codes</h1>
+            <p className="text-gray-600">Manage discounts for your assigned hotel.</p>
           </div>
           <div className="flex gap-3">
             <input
@@ -191,14 +197,14 @@ export default function PromoCodes() {
           </div>
         </div>
 
-        {loading ? (
-          <p className="text-gray-500">Loading promo codes…</p>
-        ) : error ? (
-          <div className="text-red-500">{error}</div>
-        ) : filteredPromos.length === 0 ? (
-          <div className="text-gray-500">No promo codes found.</div>
+        {error && <div className="text-red-500">{error}</div>}
+
+        {filteredPromos.length === 0 ? (
+          <div className="bg-white rounded-2xl shadow p-10 text-center border border-dashed border-orange-200">
+            <p className="text-gray-600">No promo codes yet. Create your first discount for this hotel.</p>
+          </div>
         ) : (
-          <div className="overflow-x-auto bg-white shadow rounded-lg">
+          <div className="overflow-x-auto bg-white shadow rounded-2xl border border-orange-100">
             <table className="min-w-full text-left">
               <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
                 <tr>
@@ -206,7 +212,6 @@ export default function PromoCodes() {
                   <th className="p-4">Discount</th>
                   <th className="p-4">Dates</th>
                   <th className="p-4">Usage</th>
-                  <th className="p-4">Scope</th>
                   <th className="p-4">Status</th>
                   <th className="p-4">Actions</th>
                 </tr>
@@ -227,9 +232,6 @@ export default function PromoCodes() {
                       {promo.usage_limit
                         ? `${promo.usage_count}/${promo.usage_limit}`
                         : `${promo.usage_count} / ∞`}
-                    </td>
-                    <td className="p-4 text-sm text-gray-600">
-                      {promo.hotel_name || "All hotels"}
                     </td>
                     <td className="p-4">
                       <span
@@ -346,26 +348,6 @@ export default function PromoCodes() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-600">Hotel Scope</label>
-                <select
-                  name="hotel_id"
-                  value={form.hotel_id}
-                  onChange={handleChange}
-                  className="w-full border rounded px-3 py-2 mt-1"
-                >
-                  <option value="">All hotels</option>
-                  {hotels.map((hotel) => (
-                    <option key={hotel.id} value={hotel.id}>
-                      {hotel.name}
-                    </option>
-                  ))}
-                </select>
-                {hotelsError && (
-                  <p className="text-xs text-red-500 mt-1">{hotelsError}</p>
-                )}
-              </div>
-
               <label className="inline-flex items-center gap-2 text-sm text-gray-700">
                 <input
                   type="checkbox"
@@ -402,7 +384,7 @@ export default function PromoCodes() {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 space-y-4">
             <h3 className="text-xl font-semibold text-gray-900">Delete Promo Code?</h3>
             <p className="text-gray-600">
-              This action cannot be undone. Users will no longer be able to apply this code.
+              This action cannot be undone. Guests will no longer be able to apply this code.
             </p>
             <div className="flex justify-end gap-3">
               <button
@@ -421,6 +403,6 @@ export default function PromoCodes() {
           </div>
         </div>
       )}
-    </AdminLayout>
+    </div>
   );
 }

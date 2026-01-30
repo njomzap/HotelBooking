@@ -102,7 +102,12 @@ const RoomDetail = () => {
     try {
       const res = await axios.post(
         "http://localhost:5000/api/promo-codes/apply",
-        { code: promoCode.trim(), subtotal },
+        {
+          code: promoCode.trim(),
+          subtotal,
+          room_id: room?.id,
+          hotel_id: room?.hotel_id,
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,

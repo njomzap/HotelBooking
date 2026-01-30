@@ -54,6 +54,25 @@ async function setupDatabase(){
     `);
 
     await connection.query(`
+      CREATE TABLE IF NOT EXISTS promo_codes (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        code VARCHAR(50) NOT NULL,
+        hotel_id INT NULL,
+        discount_type ENUM('percentage','fixed') NOT NULL,
+        discount_value DECIMAL(10,2) NOT NULL,
+        start_date DATE NOT NULL,
+        end_date DATE NOT NULL,
+        usage_limit INT NULL,
+        usage_count INT DEFAULT 0,
+        active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_code_scope (code, hotel_id),
+        FOREIGN KEY (hotel_id) REFERENCES hotels(id) ON DELETE SET NULL
+      )
+    `);
+
+    await connection.query(`
       CREATE TABLE IF NOT EXISTS lost_and_found (
         id INT AUTO_INCREMENT PRIMARY KEY,
         hotel_id INT,

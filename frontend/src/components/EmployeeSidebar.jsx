@@ -43,6 +43,13 @@ export default function EmployeeSidebar() {
       </NavLink>
 
       <NavLink
+        to="/employee-dashboard/promos"
+        className={({ isActive }) => (isActive ? activeStyle : navItemStyle)}
+      >
+        Promo Codes
+      </NavLink>
+
+      <NavLink
         to="/employee-dashboard/profile"
         className={({ isActive }) => (isActive ? activeStyle : navItemStyle)}
       >
