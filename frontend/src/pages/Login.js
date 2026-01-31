@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/tokenService';
+import { authService } from '../services/authService';
 
 export default function Login({ setRole }) {
   const navigate = useNavigate();
@@ -30,28 +31,16 @@ export default function Login({ setRole }) {
         localStorage.removeItem("hotelId");
       }
 
-      // Log token storage (for debugging)
-      console.log('🔑 TOKENS CREATED & STORED:');
+      // Use authService to create and log token
+      authService.createToken(
+        res.data.accessToken,
+        res.data.id,
+        res.data.username || res.data.user?.username,
+        res.data.role
+      );
+
+      console.log('🔑 LOGIN SUCCESSFUL');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('📱 ACCESS TOKEN:');
-      console.log('   Token:', res.data.accessToken);
-      console.log('   Type: Bearer Token');
-      console.log('   Storage: localStorage');
-      console.log('   Expires: 15 minutes');
-      console.log('');
-      console.log('🔄 REFRESH TOKEN:');
-      console.log('   Token: [Stored in httpOnly cookie]');
-      console.log('   Type: HttpOnly Cookie');
-      console.log('   Storage: Browser Cookie (httpOnly)');
-      console.log('   Expires: 7 days');
-      console.log('');
-      console.log('👤 USER INFO:');
-      console.log('   Role:', res.data.role);
-      console.log('   User ID:', res.data.id);
-      console.log('   Username:', formData.username);
-      console.log('   Timestamp:', new Date().toISOString());
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('');
 
       if (setRole) setRole(res.data.role);
 

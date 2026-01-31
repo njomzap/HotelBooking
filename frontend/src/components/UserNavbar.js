@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { logout } from "../services/tokenService";
+import { authService } from "../services/authService";
 
 export default function UserNavbar({ setRole }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
   const handleLogout = async () => {
+    console.log('🗑️ USER LOGOUT INITIATED - Starting logout process');
+    
     const accessToken = localStorage.getItem("accessToken");
     const role = localStorage.getItem("role");
     const userId = localStorage.getItem("userId");
@@ -18,8 +20,25 @@ export default function UserNavbar({ setRole }) {
     console.log('User ID:', userId);
     console.log('Timestamp:', new Date().toISOString());
     
+    console.log('🔍 Before logout - localStorage state:', {
+      token: localStorage.getItem("token"),
+      accessToken: localStorage.getItem("accessToken"),
+      userId: localStorage.getItem("userId"),
+      role: localStorage.getItem("role")
+    });
+    
     try {
-      await logout();
+      console.log('🚪 Calling authService.logout()...');
+      authService.logout(); // Use our new authService
+      console.log('✅ authService.logout() completed');
+      
+      console.log('🔍 After logout - localStorage state:', {
+        token: localStorage.getItem("token"),
+        accessToken: localStorage.getItem("accessToken"),
+        userId: localStorage.getItem("userId"),
+        role: localStorage.getItem("role")
+      });
+      
       console.log('✅ USER LOGOUT SUCCESSFUL');
       if (setRole) setRole(null);
       navigate("/login");

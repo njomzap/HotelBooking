@@ -1,9 +1,9 @@
 import axios from 'axios';
+import { authService } from './authService';
 
-// Create axios instance with default config
 const api = axios.create({
   baseURL: 'http://localhost:5000/api',
-  withCredentials: true, // Important for httpOnly cookies
+  withCredentials: true,
 });
 
 const emitAuthChange = () => {
@@ -12,25 +12,21 @@ const emitAuthChange = () => {
   }
 };
 
-// Token refresh state
 let isRefreshing = false;
 let refreshSubscribers = [];
 
-// Function to add subscribers waiting for token refresh
 const addRefreshSubscriber = (callback) => {
   refreshSubscribers.push(callback);
 };
 
-// Function to notify all subscribers
 const onRefreshed = (token) => {
   refreshSubscribers.forEach(callback => callback(token));
   refreshSubscribers = [];
 };
 
-// Request interceptor - add access token to all requests
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    const token = authService.getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -41,7 +37,6 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor - handle token refresh
 api.interceptors.response.use(
   (response) => {
     return response;
@@ -49,95 +44,67 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // If error is 401 (Unauthorized) and we haven't tried refreshing yet
     if (error.response?.status === 401 && !originalRequest._retry) {
-      
-      // If this is the refresh token endpoint itself, don't try to refresh again
-      if (originalRequest.url === '/refresh') {
-        // Refresh token is invalid, redirect to login
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('role');
-        localStorage.removeItem('userId');
-        localStorage.removeItem('hotelId');
-        emitAuthChange();
-        window.location.href = '/login';
-        return Promise.reject(error);
-      }
+      if (!isRefreshing) {
+        isRefreshing = true;
 
-      if (isRefreshing) {
-        // If already refreshing, wait for it to complete
-        return new Promise((resolve) => {
-          addRefreshSubscriber((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            resolve(api(originalRequest));
-          });
-        });
-      }
+        if (refreshSubscribers.length === 0) {
+          try {
+            const response = await axios.post('http://localhost:5000/api/refresh', {}, {
+              withCredentials: true
+            });
 
-      // Mark that we're refreshing
-      isRefreshing = true;
-      originalRequest._retry = true;
+            const { accessToken } = response.data;
+            authService.refreshToken(accessToken);
+            
+            if (response.data.user) {
+              localStorage.setItem('role', response.data.user.role);
+              localStorage.setItem('userId', response.data.user.id);
+              if (Object.prototype.hasOwnProperty.call(response.data.user, 'hotelId')) {
+                localStorage.setItem('hotelId', response.data.user.hotelId ?? '');
+              }
+            }
 
-      try {
-        // Attempt to refresh the token
-        const response = await axios.post('http://localhost:5000/api/refresh', {}, {
-          withCredentials: true // Important for httpOnly cookies
-        });
+            emitAuthChange();
 
-        const { accessToken } = response.data;
-        
-        // Store new access token
-        localStorage.setItem('accessToken', accessToken);
-        
-        // Update user info if provided
-        if (response.data.user) {
-          localStorage.setItem('role', response.data.user.role);
-          localStorage.setItem('userId', response.data.user.id);
-          if (Object.prototype.hasOwnProperty.call(response.data.user, 'hotelId')) {
-            localStorage.setItem('hotelId', response.data.user.hotelId ?? '');
+            onRefreshed(accessToken);
+            
+            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+            return api(originalRequest);
+
+          } catch (refreshError) {
+            console.error('Token refresh failed:', refreshError);
+            
+            authService.logout();
+            
+            refreshSubscribers.forEach(callback => callback(null));
+            refreshSubscribers = [];
+            
+            window.location.href = '/login';
+            
+            return Promise.reject(refreshError);
+          } finally {
+            isRefreshing = false;
           }
         }
-
-        emitAuthChange();
-
-        // Log token refresh (for debugging)
-        console.log('🔄 ACCESS TOKEN REFRESHED:');
-        console.log('New Token:', accessToken.substring(0, 20) + '...');
-        console.log('Timestamp:', new Date().toISOString());
-        console.log('---');
-
-        // Notify all waiting requests
-        onRefreshed(accessToken);
-        
-        // Retry the original request
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-        return api(originalRequest);
-
-      } catch (refreshError) {
-        // Refresh failed, clear tokens and redirect to login
-        console.error('Token refresh failed:', refreshError);
-        
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('role');
-        localStorage.removeItem('userId');
-        
-        // Log token destruction (for debugging)
-        console.log('🗑️ TOKEN REFRESH FAILED - LOGGING OUT:');
-        console.log('Timestamp:', new Date().toISOString());
-        console.log('---');
-        
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
       }
+
+      return new Promise((resolve, reject) => {
+        addRefreshSubscriber((token) => {
+          if (token) {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            resolve(api(originalRequest));
+          } else {
+            reject(error);
+          }
+        });
+      });
     }
 
     return Promise.reject(error);
   }
 );
 
-// Manual refresh token function
 export const refreshToken = async () => {
   try {
     const response = await axios.post('http://localhost:5000/api/refresh', {}, {
@@ -145,7 +112,7 @@ export const refreshToken = async () => {
     });
 
     const { accessToken } = response.data;
-    localStorage.setItem('accessToken', accessToken);
+    authService.refreshToken(accessToken);
     
     if (response.data.user) {
       localStorage.setItem('role', response.data.user.role);
@@ -162,8 +129,9 @@ export const refreshToken = async () => {
   }
 };
 
-// Logout function
 export const logout = async () => {
+  console.log("🚪 USER LOGGED OUT - Tokens destroyed");
+  
   try {
     await axios.post('http://localhost:5000/api/refresh/logout', {}, {
       withCredentials: true
@@ -171,20 +139,10 @@ export const logout = async () => {
   } catch (error) {
     console.error('Logout error:', error);
   } finally {
-    // Always clear local storage
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('role');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('hotelId');
-    emitAuthChange();
-    
-    console.log('🗑️ USER LOGGED OUT:');
-    console.log('Timestamp:', new Date().toISOString());
-    console.log('---');
+    authService.logout();
   }
 };
 
-// Logout from all devices
 export const logoutAll = async () => {
   try {
     await axios.post('http://localhost:5000/api/refresh/logout-all', {}, {
@@ -193,7 +151,6 @@ export const logoutAll = async () => {
   } catch (error) {
     console.error('Logout all error:', error);
   } finally {
-    // Always clear local storage
     localStorage.removeItem('accessToken');
     localStorage.removeItem('role');
     localStorage.removeItem('userId');

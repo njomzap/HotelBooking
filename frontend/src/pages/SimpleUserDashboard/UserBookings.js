@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Calendar, MapPin, DollarSign, Edit, X, CreditCard, Clock, User, Home, MessageSquare, Plus, Trash2 } from "lucide-react";
 import api from "../../services/tokenService";
+import { authService } from "../../services/authService";
 
 const UserBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -14,15 +15,10 @@ const UserBookings = () => {
   const [newRequest, setNewRequest] = useState("");
   const [addingRequest, setAddingRequest] = useState(null);
 
-  const token = localStorage.getItem("accessToken");
-
   useEffect(() => {
     console.log("=== USERBOOKINGS COMPONENT MOUNTED ===");
-    console.log("Token available:", !!token);
-    console.log("Token type:", typeof token);
-    console.log("Token length:", token?.length);
     
-    if (token && token.trim() !== "") {
+    if (authService.isLoggedIn()) {
       fetchBookings();
     } else {
       console.log("No valid token found, skipping booking fetch");
