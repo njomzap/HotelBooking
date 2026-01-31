@@ -6,7 +6,13 @@ export default function Profile() {
   const token = localStorage.getItem("accessToken");
   const navigate = useNavigate();
 
-  const [currentUsername, setCurrentUsername] = useState("");
+  const [userData, setUserData] = useState({
+    username: "",
+    email: "",
+    phone: "",
+    birthday: "",
+    name: "",
+  });
   const [newUsername, setNewUsername] = useState("");
   const [passwords, setPasswords] = useState({
     currentPassword: "",
@@ -20,7 +26,13 @@ export default function Profile() {
     const fetchProfile = async () => {
       try {
         const res = await api.get("/users/me");
-        setCurrentUsername(res.data.username || "");
+        setUserData({
+          username: res.data.username || "",
+          email: res.data.email || "",
+          phone: res.data.phone || "",
+          birthday: res.data.birthday || "",
+          name: res.data.name || "",
+        });
       } catch (err) {
         console.error(err);
         alert("Failed to load user data");
@@ -45,7 +57,7 @@ export default function Profile() {
       );
 
       alert("Username updated successfully!");
-      setCurrentUsername(newUsername);
+      setUserData({ ...userData, username: newUsername });
       setNewUsername("");
     } catch (err) {
       console.error(err);
@@ -91,92 +103,171 @@ export default function Profile() {
     }
   };
 
-  if (loading) return <p className="text-center mt-12 text-gray-600">Loading profile...</p>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+
+  const getInitials = () => {
+    return (userData.name?.charAt(0) || userData.username?.charAt(0) || "U").toUpperCase();
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "Not provided";
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 py-16 px-4">
-      <div className="max-w-5xl mx-auto space-y-10">
-        <h1 className="text-3xl font-semibold text-gray-900 text-center">
-          {currentUsername ? `${currentUsername}'s Profile` : "Profile"}
-        </h1>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-2xl shadow p-6 space-y-4 border border-orange-100">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-semibold">UN</div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Update username</h2>
-                <p className="text-sm text-gray-500">Choose a new display name for your bookings.</p>
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 py-8 px-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Profile Header Card */}
+        <div className="bg-white rounded-2xl shadow-lg p-8 mb-6 border border-orange-100">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-3xl font-bold shadow-md">
+              {getInitials()}
             </div>
-            <div className="space-y-3">
-              <input
-                type="text"
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-                placeholder="Enter new username"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:outline-none"
-              />
-              <button
-                onClick={updateUsername}
-                className="px-5 py-2 rounded-xl bg-orange-500 text-white font-semibold hover:bg-orange-600"
-              >
-                Save changes
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow p-6 space-y-4 border border-orange-100">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-semibold">PW</div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Change password</h2>
-                <p className="text-sm text-gray-500">Add a strong new password to keep your account safe.</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <input
-                type="password"
-                placeholder="Current password"
-                value={passwords.currentPassword}
-                onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:outline-none"
-              />
-              <input
-                type="password"
-                placeholder="New password"
-                value={passwords.newPassword}
-                onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:outline-none"
-              />
-              <input
-                type="password"
-                placeholder="Confirm new password"
-                value={passwords.confirmPassword}
-                onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:outline-none"
-              />
-              <button
-                onClick={updatePassword}
-                className="px-5 py-2 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800"
-              >
-                Update password
-              </button>
+            <div className="text-center md:text-left flex-1">
+              <h1 className="text-2xl font-bold text-gray-900">
+                {userData.name || userData.username}
+              </h1>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow p-6 border border-red-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold text-red-600">Delete account</h2>
-            <p className="text-sm text-gray-500">Your bookings history will be removed permanently.</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Account Info */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Personal Information */}
+            <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-blue-600 font-bold">
+                  AI
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Account Information</h2>
+                  <p className="text-sm text-gray-500">Your registered details</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Email</p>
+                  <p className="font-medium text-gray-900 break-all">{userData.email || "Not provided"}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Phone</p>
+                    <p className="font-medium text-gray-900">{userData.phone || "Not provided"}</p>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Birthday</p>
+                    <p className="font-medium text-gray-900">{formatDate(userData.birthday)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Update Username */}
+            <div className="bg-white rounded-2xl shadow-md p-6 border border-orange-100">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center text-orange-600 font-bold">
+                  UN
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Change Username</h2>
+                  <p className="text-sm text-gray-500">Update your display name</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                  placeholder="Enter new username"
+                  className="flex-1 border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                />
+                <button
+                  onClick={updateUsername}
+                  className="px-6 py-3 bg-orange-500 text-white font-semibold rounded-xl hover:bg-orange-600 transition-colors"
+                >
+                  Update
+                </button>
+              </div>
+            </div>
           </div>
-          <button
-            onClick={deleteAccount}
-            className="px-5 py-2 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600"
-          >
-            Delete my account
-          </button>
+
+          {/* Right Column - Security */}
+          <div className="space-y-6">
+            {/* Change Password */}
+            <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold">
+                  PW
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Password</h2>
+                  <p className="text-sm text-gray-500">Change your password</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <input
+                  type="password"
+                  placeholder="Current"
+                  value={passwords.currentPassword}
+                  onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-slate-500 focus:outline-none text-sm"
+                />
+                <input
+                  type="password"
+                  placeholder="New"
+                  value={passwords.newPassword}
+                  onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-slate-500 focus:outline-none text-sm"
+                />
+                <input
+                  type="password"
+                  placeholder="Confirm"
+                  value={passwords.confirmPassword}
+                  onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-slate-500 focus:outline-none text-sm"
+                />
+                <button
+                  onClick={updatePassword}
+                  className="w-full py-3 bg-slate-900 text-white font-semibold rounded-xl hover:bg-slate-800 transition-colors"
+                >
+                  Update
+                </button>
+              </div>
+            </div>
+
+            {/* Delete Account */}
+            <div className="bg-red-50 rounded-2xl shadow-md p-6 border border-red-100">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center text-red-600 font-bold">
+                  !
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-red-700">Danger Zone</h2>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                Delete your account permanently. This cannot be undone.
+              </p>
+              <button
+                onClick={deleteAccount}
+                className="w-full py-3 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition-colors"
+              >
+                Delete Account
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

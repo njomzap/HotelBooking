@@ -28,36 +28,25 @@ export default function EmployeeLayout() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-
-      {/* SIDEBAR */}
-      <div className="flex flex-col w-64 bg-white border-r">
-        <EmployeeSidebar />
-      </div>
-
-      {/* CONTENT AREA */}
-      <div className="flex-1 flex flex-col">
-
-        {/* HEADER */}
-        <div className="flex items-center justify-between bg-white px-6 py-4 border-b shadow-sm">
-          <div className="flex items-center gap-2">
-            <img
-              src="/images/logo.png"
-              alt="Logo"
-              className="w-8 h-8 rounded-lg"
-            />
-            <h1 className="text-xl font-semibold text-gray-800">
-              Employee Portal
-            </h1>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-orange-500 text-white rounded-2xl hover:bg-orange-600 transition"
-          >
-            Logout
-          </button>
+    <div className="flex flex-col min-h-screen bg-gray-100">
+      {/* HEADER */}
+      <header className="flex items-center justify-between bg-white px-6 py-4 border-b shadow">
+        <div className="flex items-center gap-2">
+          <img src="/images/logo.png" alt="StayEase Logo" className="w-8 h-8 rounded-lg" />
+          <h1 className="text-xl font-semibold text-gray-800">BookYourStay</h1>
         </div>
+
+        <button
+          onClick={handleLogout}
+          className="px-4 py-2 bg-orange-500 text-white rounded-2xl hover:bg-orange-600 transition"
+        >
+          Logout
+        </button>
+      </header>
+
+      <div className="flex flex-1">
+        {/* SIDEBAR */}
+        <EmployeeSidebar />
 
         {/* PAGE CONTENT */}
         <main className="flex-1 p-6">

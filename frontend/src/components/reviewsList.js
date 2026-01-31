@@ -7,10 +7,25 @@ const ReviewsList = ({ hotelId }) => {
   const [editingReviewId, setEditingReviewId] = useState(null);
   const [editRating, setEditRating] = useState(5);
   const [editComment, setEditComment] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem("accessToken"));
 
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
   const role = localStorage.getItem("role");
   const userId = Number(localStorage.getItem("userId"));
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      setIsLoggedIn(!!localStorage.getItem("accessToken"));
+    };
+
+    window.addEventListener("auth-change", handleAuthChange);
+    window.addEventListener("storage", handleAuthChange);
+
+    return () => {
+      window.removeEventListener("auth-change", handleAuthChange);
+      window.removeEventListener("storage", handleAuthChange);
+    };
+  }, []);
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -72,10 +87,14 @@ const ReviewsList = ({ hotelId }) => {
   return (
     <div className="space-y-8">
    
-      {token && (
+      {isLoggedIn ? (
         <div>
           <h3 className="text-xl font-semibold text-orange-600 mb-4">Add a Review</h3>
           <AddReviewForm hotelId={hotelId} onReviewAdded={handleReviewAdded} />
+        </div>
+      ) : (
+        <div className="p-4 border border-dashed border-orange-200 rounded-2xl bg-orange-50 text-sm text-gray-600">
+          Please log in to share your experience.
         </div>
       )}
 

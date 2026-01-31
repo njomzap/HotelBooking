@@ -8,6 +8,7 @@ export default function Register() {
     name: '',
     username: '',
     email: '',
+    phone: '',
     birthday: '',
     password: '',
     confirmPassword: '',
@@ -33,9 +34,10 @@ export default function Register() {
         username: formData.username,
         password: formData.password,
         email: formData.email,
+        phone: formData.phone,
         name: formData.name,
         birthday: formData.birthday,
-        role: roleValue, 
+        role: roleValue,
       });
 
       alert(res.data.message);
@@ -85,6 +87,18 @@ export default function Register() {
               value={formData.email}
               onChange={handleChange}
               placeholder="Enter your email"
+              className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-700">Phone Number</label>
+            <input
+              type="tel"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              placeholder="Enter your phone number"
               className="w-full px-4 py-2 mt-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>

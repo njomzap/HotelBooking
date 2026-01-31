@@ -11,9 +11,12 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
+const defaultPosition = [41.3275, 19.8187];
+
 const HotelMapLeaflet = ({ address, city }) => {
-  const [position, setPosition] = useState([41.3275, 19.8187]); // Default: Tirana
+  const [position, setPosition] = useState(defaultPosition); // Default: Tirana
   const [loading, setLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
   // Custom orange icon
   const orangeIcon = new L.Icon({
@@ -63,15 +66,21 @@ const HotelMapLeaflet = ({ address, city }) => {
       }
     };
 
-    geocodeAddress();
+    if (typeof window !== 'undefined') {
+      geocodeAddress();
+    }
   }, [address, city]);
+
+  useEffect(() => {
+    setIsClient(typeof window !== 'undefined');
+  }, []);
 
   const openInMaps = () => {
     const url = `https://www.openstreetmap.org/?mlat=${position[0]}&mlon=${position[1]}#map=15/${position[0]}/${position[1]}`;
     window.open(url, '_blank');
   };
 
-  if (loading) {
+  if (!isClient || loading) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-center h-96 bg-gray-100 rounded-2xl">

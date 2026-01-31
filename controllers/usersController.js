@@ -7,7 +7,7 @@ exports.register = async (req, res) => {
   try {
     console.log("Register body:", req.body); 
 
-    const { username, password, email, name, birthday, role } = req.body;
+    const { username, password, email, name, birthday, phone, role } = req.body;
 
     if (!username || !password || !name) {
       return res.status(400).json({ message: "Username, password, and name are required" });
@@ -25,8 +25,8 @@ exports.register = async (req, res) => {
     const hashed = await bcrypt.hash(password, 10);
 
     await pool.query(
-      "INSERT INTO users (username, password, email, name, birthday, role) VALUES (?, ?, ?, ?, ?, ?)",
-      [username, hashed, email || null, name, birthday || null, role || "user"]
+      "INSERT INTO users (username, password, email, name, birthday, phone, role) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [username, hashed, email || null, name, birthday || null, phone || null, role || "user"]
     );
 
     res.status(201).json({ message: "User registered successfully" });
@@ -105,7 +105,10 @@ exports.login = async (req, res) => {
 exports.getMe = async (req, res) => {
   try {
     const userId = req.user.id;
-    const [rows] = await pool.query("SELECT id, username, role, hotel_id FROM users WHERE id = ?", [userId]);
+    const [rows] = await pool.query(
+      "SELECT id, username, email, phone, name, birthday, role, hotel_id FROM users WHERE id = ?",
+      [userId]
+    );
     if (rows.length === 0) return res.status(404).json({ message: "User not found" });
     res.json(rows[0]);
   } catch (err) {
