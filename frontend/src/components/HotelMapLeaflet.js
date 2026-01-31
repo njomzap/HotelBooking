@@ -37,22 +37,27 @@ const HotelMapLeaflet = ({ address, city }) => {
     const geocodeAddress = async () => {
       try {
         const fullAddress = `${address}, ${city}`;
+        console.log("Geocoding address:", fullAddress);
         
-        // Using Nominatim API (OpenStreetMap geocoding)
         const response = await fetch(
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1`
         );
         
         if (response.ok) {
           const data = await response.json();
+          console.log("Geocoding response:", data);
           if (data && data.length > 0) {
             const { lat, lon } = data[0];
             setPosition([parseFloat(lat), parseFloat(lon)]);
+            console.log("Position set to:", [parseFloat(lat), parseFloat(lon)]);
+          } else {
+            console.log("No results found for address");
           }
+        } else {
+          console.log("Geocoding request failed");
         }
       } catch (error) {
         console.error('Geocoding error:', error);
-        // Keep default position if geocoding fails
       } finally {
         setLoading(false);
       }
@@ -69,7 +74,6 @@ const HotelMapLeaflet = ({ address, city }) => {
   if (loading) {
     return (
       <div className="space-y-4">
-        
         <div className="flex items-center justify-center h-96 bg-gray-100 rounded-2xl">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
         </div>
@@ -80,7 +84,7 @@ const HotelMapLeaflet = ({ address, city }) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-       
+        <h4 className="text-sm font-medium text-gray-700">Hotel Location</h4>
         <button
           onClick={openInMaps}
           className="text-orange-600 hover:text-orange-700 font-medium text-sm flex items-center gap-1"
@@ -88,39 +92,36 @@ const HotelMapLeaflet = ({ address, city }) => {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
           </svg>
-          Open in OpenStreetMap
+          Open in Maps
         </button>
       </div>
       
-      <div className="relative overflow-hidden rounded-2xl shadow-lg border border-orange-100">
-        <MapContainer
-          center={position}
-          zoom={15}
-          style={{ height: '250px', width: '100%' }}
-          className="rounded-2xl"
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          <Marker position={position} icon={orangeIcon}>
-            <Popup>
-              <div className="text-center">
-                <p className="font-semibold text-gray-900">{city}</p>
-                <p className="text-sm text-gray-600">{address}</p>
-                <button
-                  onClick={openInMaps}
-                  className="mt-2 text-orange-600 hover:text-orange-700 text-xs font-medium"
-                >
-                  Shfaq në hartë të plotë
-                </button>
-              </div>
-            </Popup>
-          </Marker>
-        </MapContainer>
-        
-        <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-md px-3 py-2 text-xs text-gray-600">
-          💡 Kliko mbi hartë për të parë detajet
+      <div className="rounded-2xl shadow-lg border border-orange-100 overflow-hidden" style={{ height: '300px' }}>
+        <div style={{ height: '100%', width: '100%', position: 'relative' }}>
+          <MapContainer
+            center={position}
+            zoom={15}
+            style={{ height: '100%', width: '100%', position: 'absolute', top: 0, left: 0 }}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            <Marker position={position} icon={orangeIcon}>
+              <Popup>
+                <div className="text-center">
+                  <p className="font-semibold text-gray-900">{city || 'Unknown'}</p>
+                  <p className="text-sm text-gray-600">{address || 'No address'}</p>
+                  <button
+                    onClick={openInMaps}
+                    className="mt-2 text-orange-600 hover:text-orange-700 text-xs font-medium"
+                  >
+                    View in Full Map
+                  </button>
+                </div>
+              </Popup>
+            </Marker>
+          </MapContainer>
         </div>
       </div>
     </div>

@@ -16,7 +16,7 @@ const HotelDetails = () => {
   const [loading, setLoading] = useState(true);
   const [roomsLoading, setRoomsLoading] = useState(true);
 
-  // Lost & Found State
+  
   const [showLostFoundModal, setShowLostFoundModal] = useState(false);
   const [lostItems, setLostItems] = useState([]);
   const [newItem, setNewItem] = useState({
@@ -79,7 +79,7 @@ const HotelDetails = () => {
   const handleAddItem = async (e) => {
     e.preventDefault();
     
-    // Check if user is logged in
+ 
     const token = localStorage.getItem("token");
     if (!token) {
       alert("Please login to report lost items");
@@ -92,13 +92,13 @@ const HotelDetails = () => {
         hotel_id: id,
       }, { headers: { Authorization: `Bearer ${token}` } });
       
-      // Add the new item to the list
+      
       setLostItems(prev => [...prev, res.data]);
       
       // Reset form
       setNewItem({ item_name: "", description: "", date_found: "", location: "" });
       
-      // Show success feedback
+     
       alert("Lost item reported successfully!");
       
     } catch (err) {
@@ -107,7 +107,6 @@ const HotelDetails = () => {
     }
   };
 
-  // Function to refresh lost items when modal opens
   const refreshLostItems = useCallback(async () => {
     setLfLoading(true);
     try {
@@ -133,7 +132,7 @@ const HotelDetails = () => {
 
   return (
     <div className="w-full">
-      {/* Hero Section with Hotel Image */}
+   
       <div className="relative w-full h-[60vh]">
         {hotel.images?.length ? (
           <>
@@ -176,14 +175,13 @@ const HotelDetails = () => {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="bg-gray-50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          {/* Hotel Information Section */}
+          
           <div className="bg-white rounded-3xl shadow-xl p-8 mb-12 border border-orange-100">
             <div className="grid md:grid-cols-2 gap-8">
-              {/* Location & Contact */}
+              
               <div className="bg-gradient-to-br from-orange-50 to-white rounded-2xl p-6 border border-orange-100">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
@@ -216,7 +214,7 @@ const HotelDetails = () => {
                 </div>
               </div>
 
-              {/* Amenities */}
+              
               <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-6 border border-blue-100">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
@@ -247,24 +245,19 @@ const HotelDetails = () => {
               </div>
             </div>
 
-            {/* Map Section */}
-            <div className="mt-8">
+           
+            <div className="mt-4">
               <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 border border-gray-200">
                 <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-orange-500" />
                   Hotel Location
                 </h3>
-                {/* <HotelMapLeaflet address={hotel.address} city={hotel.city} /> */}
-                <div className="bg-gray-100 rounded-2xl p-8 text-center">
-                  <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">Map temporarily disabled</p>
-                  <p className="text-sm text-gray-500 mt-2">{hotel.address}, {hotel.city}</p>
-                </div>
+                <HotelMapLeaflet address={hotel.address} city={hotel.city} />
               </div>
             </div>
           </div>
 
-          {/* Lost & Found Button */}
+         
           <div className="fixed bottom-8 right-8 z-50">
             <button
               onClick={() => {
@@ -278,7 +271,7 @@ const HotelDetails = () => {
             </button>
           </div>
 
-        {/* Rooms Section */}
+        
           <div className="mb-12">
             <div className="flex items-center gap-3 mb-8">
               <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
@@ -308,7 +301,6 @@ const HotelDetails = () => {
             )}
           </div>
 
-          {/* Reviews Section */}
           <div className="mb-12">
             <div className="flex items-center gap-3 mb-8">
               <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
@@ -327,18 +319,17 @@ const HotelDetails = () => {
         </div>
       </div>
 
-      {/* Lost & Found Modal */}
+      
       {showLostFoundModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* Backdrop */}
+          
           <div 
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowLostFoundModal(false)}
           />
           
-          {/* Modal Content */}
+          
           <div className="relative bg-white rounded-3xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
-            {/* Modal Header */}
             <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 text-white">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -361,7 +352,7 @@ const HotelDetails = () => {
               </div>
             </div>
 
-            {/* Modal Body */}
+            
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
               {lfLoading ? (
                 <div className="flex justify-center py-12">
@@ -369,7 +360,7 @@ const HotelDetails = () => {
                 </div>
               ) : (
                 <>
-                  {/* Existing Items */}
+                 
                   <div className="mb-8">
                     <h3 className="text-xl font-semibold text-gray-900 mb-4">Recent Lost Items</h3>
                     {lostItems.length === 0 ? (
@@ -397,7 +388,7 @@ const HotelDetails = () => {
                     )}
                   </div>
 
-                  {/* Report New Item Form */}
+                 
                   {isLoggedIn && (
                     <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 border border-orange-200">
                       <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
