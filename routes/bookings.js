@@ -22,8 +22,10 @@ router.put("/user/:id", authMiddleware, bookingsController.updateBookingDatesByU
 
 router.delete("/:id", authMiddleware, bookingsController.deleteBooking);
 
+router.delete("/:id/hard", authMiddleware, bookingsController.hardDeleteBooking);
+
 router.put("/confirm/:id", authMiddleware, bookingsController.confirmBookingByEmployee);
 
-router.put("/:bookingId", bookingsController.updateBookingStatus);
+router.put("/:bookingId", authMiddleware, bookingsController.updateBookingStatus);
 
 module.exports = router;

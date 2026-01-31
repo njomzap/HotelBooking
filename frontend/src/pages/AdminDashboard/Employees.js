@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../../services/tokenService";
 import AdminLayout from "../../components/AdminLayout";
+import { MapPin, Users, Mail, Building } from "lucide-react";
 
 const API_URL = "/users";
 
@@ -73,31 +74,39 @@ export default function Employees() {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <div className="p-6">
+        <div className="max-w-7xl mx-auto space-y-8">
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-gray-900">Employees Management</h1>
-            <div className="flex items-center gap-4">
-              <div className="bg-orange-100 text-orange-800 px-4 py-2 rounded-full">
-                <span className="font-semibold">{employees.length} Total Employees</span>
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Users className="w-6 h-6 text-orange-600" />
+                <h1 className="text-2xl font-bold text-gray-900">Employee Management</h1>
               </div>
-              <input
-                type="text"
-                placeholder="Search employees..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
+              <div className="flex items-center gap-4">
+                <div className="bg-orange-100 text-orange-800 px-4 py-2 rounded-full text-sm font-medium">
+                  {employees.length} {employees.length === 1 ? 'Employee' : 'Employees'}
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search employees..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
             </div>
+            <p className="text-gray-600 mt-2">Manage and monitor all hotel employees</p>
           </div>
 
           {/* Employees Display */}
           {employees.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="text-6xl mb-4 opacity-50">👥</div>
-              <h3 className="text-xl font-medium text-gray-600 mb-2">No Employees Found</h3>
-              <p className="text-gray-500">When employees are added to the system, they'll appear here organized by hotel</p>
+            <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
+              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="w-8 h-8 text-orange-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Employees Found</h3>
+              <p className="text-gray-600">When employees are added to the system, they'll appear here organized by hotel</p>
             </div>
           ) : (
             <div className="space-y-8">
@@ -106,45 +115,41 @@ export default function Employees() {
                 return (
                   <div key={hotelName} className="space-y-4">
                     {/* Hotel Header */}
-                    <div className="bg-gradient-to-r from-orange-500 to-amber-600 text-white rounded-2xl p-6 shadow-lg">
+                    <div className="bg-white rounded-lg shadow-sm border p-6">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-2xl font-bold">{hotelName}</h3>
-                          <p className="text-orange-100 text-sm mt-1">
-                            {hotelData.hotel?.location || 'Location not specified'}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="bg-white/20 px-4 py-2 rounded-full">
-                            <span className="text-lg font-semibold">
-                              {hotelData.employees.length} {hotelData.employees.length === 1 ? 'Employee' : 'Employees'}
-                            </span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <MapPin className="w-5 h-5 text-orange-600" />
                           </div>
-                          <button
-                            onClick={() => toggleHotelEmployees(hotelName)}
-                            className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-full transition-colors flex items-center gap-2"
-                          >
-                            <span className="font-medium">
-                              {isExpanded ? 'Hide Employees' : 'Show Employees'}
-                            </span>
-                            <svg 
-                              className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                              fill="none" 
-                              viewBox="0 0 24 24" 
-                              stroke="currentColor"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </button>
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900">{hotelName}</h3>
+                            <p className="text-sm text-gray-600">
+                              {hotelData.hotel?.location || 'Location not specified'}
+                            </p>
+                          </div>
                         </div>
+                        <button
+                          onClick={() => toggleHotelEmployees(hotelName)}
+                          className="flex items-center gap-2 px-4 py-2 bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition-colors text-sm font-medium"
+                        >
+                          <span>{isExpanded ? 'Hide' : 'Show'} Employees</span>
+                          <svg 
+                            className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                            fill="none" 
+                            viewBox="0 0 24 24" 
+                            stroke="currentColor"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
                       </div>
                     </div>
                     
-                    {/* Employee Cards Grid - Collapsible */}
+                    {/* Employee Cards - Collapsible */}
                     {isExpanded && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {hotelData.employees.map((employee) => (
-                          <div key={employee.id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-gray-100">
+                          <div key={employee.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow p-6">
                             <div className="flex items-center justify-between mb-4">
                               <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                                 <span className="text-orange-600 font-bold text-lg">
@@ -163,17 +168,13 @@ export default function Employees() {
                               </div>
                               
                               <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
+                                <Users className="w-4 h-4" />
                                 <span>ID: {employee.id}</span>
                               </div>
                               
                               {hotelData.hotel && (
                                 <div className="flex items-center gap-2 text-sm text-orange-600">
-                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                  </svg>
+                                  <Building className="w-4 h-4" />
                                   <span>{hotelName}</span>
                                 </div>
                               )}

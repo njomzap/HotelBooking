@@ -99,13 +99,26 @@ exports.getAllBookings = async (req, res) => {
       SELECT 
         b.*,
         u.name AS user_name,
+        u.email AS user_email,
         r.room_name,
         r.hotel_id,
+        h.name AS hotel_name,
         p.status AS payment_status,
-        p.amount AS payment_amount
+        p.amount AS payment_amount,
+        (
+          SELECT JSON_ARRAYAGG(
+            JSON_OBJECT(
+              'id', er.id,
+              'request_text', er.request_text
+            )
+          )
+          FROM extra_requests er 
+          WHERE er.booking_id = b.id
+        ) as extra_requests
       FROM bookings b
       LEFT JOIN users u ON b.user_id = u.id
       LEFT JOIN rooms r ON b.room_id = r.id
+      LEFT JOIN hotels h ON r.hotel_id = h.id
       LEFT JOIN payments p ON p.booking_id = b.id
     `;
 
@@ -329,10 +342,21 @@ exports.getMyBookings = async (req, res) => {
   const userId = req.user.id;
   try {
     const [rows] = await db.query(
-      `SELECT b.id, b.room_id, r.room_name,
-              b.total_price, h.name AS hotel_name,
-              b.check_in, b.check_out, b.status,
-              p.status AS payment_status
+      `SELECT 
+        b.id, b.room_id, r.room_name,
+        b.total_price, h.name AS hotel_name,
+        b.check_in, b.check_out, b.status,
+        p.status AS payment_status,
+        (
+          SELECT JSON_ARRAYAGG(
+            JSON_OBJECT(
+              'id', er.id,
+              'request_text', er.request_text
+            )
+          )
+          FROM extra_requests er 
+          WHERE er.booking_id = b.id
+        ) as extra_requests
        FROM bookings b
        JOIN rooms r ON b.room_id = r.id
        JOIN hotels h ON r.hotel_id = h.id
@@ -415,6 +439,37 @@ exports.deleteBooking = async (req, res) => {
   } catch (err) {
     console.error("CANCEL BOOKING ERROR:", err);
     res.status(500).json({ message: "Failed to cancel booking" });
+  }
+};
+
+// New function to actually delete a booking from database
+exports.hardDeleteBooking = async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const userId = req.user.id;
+
+    const [bookings] = await db.query(
+      "SELECT * FROM bookings WHERE id = ? AND user_id = ?",
+      [bookingId, userId]
+    );
+
+    if (bookings.length === 0) {
+      return res.status(404).json({ message: "Booking not found or not yours" });
+    }
+
+    // Delete related extra requests first
+    await db.query("DELETE FROM extra_requests WHERE booking_id = ?", [bookingId]);
+    
+    // Delete related payments
+    await db.query("DELETE FROM payments WHERE booking_id = ?", [bookingId]);
+    
+    // Delete the booking
+    await db.query("DELETE FROM bookings WHERE id = ?", [bookingId]);
+
+    res.json({ message: "Booking deleted permanently" });
+  } catch (err) {
+    console.error("DELETE BOOKING ERROR:", err);
+    res.status(500).json({ message: "Failed to delete booking" });
   }
 };
 

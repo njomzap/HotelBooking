@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import api from "../../services/tokenService";
 import AdminLayout from "../../components/AdminLayout";
 import RoomCard from "../../components/RoomCard";
+import { MapPin } from "lucide-react";
 
 const API_URL = "/rooms";
 
@@ -144,11 +145,12 @@ export default function Rooms() {
 
   return (
     <AdminLayout>
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4">
-              <h2 className="text-xl font-bold text-white">
+      <div className="p-6">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* Add/Edit Room Form */}
+          <div className="bg-white rounded-lg shadow-sm border">
+            <div className="bg-orange-500 px-6 py-4 rounded-t-lg">
+              <h2 className="text-lg font-semibold text-white">
                 {editingId ? "Edit Room" : "Add New Room"}
               </h2>
               <p className="text-orange-100 text-sm mt-1">
@@ -164,7 +166,7 @@ export default function Rooms() {
                     name="hotel_id"
                     value={formData.hotel_id}
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all ${
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all ${
                       !formData.hotel_id ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
                     }`}
                     required
@@ -185,7 +187,7 @@ export default function Rooms() {
                     placeholder="Room Name"
                     value={formData.room_name}
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all ${
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all ${
                       !formData.room_name ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
                     }`}
                     required
@@ -199,7 +201,7 @@ export default function Rooms() {
                     placeholder="Room Number"
                     value={formData.room_number}
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all ${
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all ${
                       !formData.room_number ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
                     }`}
                     required
@@ -207,7 +209,7 @@ export default function Rooms() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700">Price (€)</label>
+                  <label className="block text-sm font-medium text-gray-700">Price ($)</label>
                   <input
                     name="price"
                     type="number"
@@ -215,7 +217,7 @@ export default function Rooms() {
                     placeholder="Price"
                     value={formData.price}
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all ${
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all ${
                       !formData.price ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
                     }`}
                     required
@@ -230,7 +232,7 @@ export default function Rooms() {
                     placeholder="Capacity"
                     value={formData.capacity}
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all ${
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all ${
                       !formData.capacity ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
                     }`}
                     required
@@ -247,7 +249,7 @@ export default function Rooms() {
                     multiple
                     accept="image/*"
                     onChange={handleFileChange}
-                    className="w-full border-2 border-dashed border-gray-300 rounded-lg p-3"
+                    className="w-full border-2 border-dashed border-gray-300 rounded-md p-3"
                   />
                   <p className="text-xs text-gray-500">
                     Hold Ctrl/Cmd and click to select multiple images
@@ -271,14 +273,14 @@ export default function Rooms() {
                   value={formData.description}
                   onChange={handleChange}
                   rows="3"
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all border-gray-300 hover:border-gray-400"
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all border-gray-300 hover:border-gray-400"
                 />
               </div>
 
               <div className="flex gap-3 pt-2">
                 <button 
                   type="submit"
-                  className="bg-orange-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-orange-600 transition-colors shadow-sm"
+                  className="bg-orange-500 text-white px-6 py-2 rounded-md font-medium hover:bg-orange-600 transition-colors"
                 >
                   {editingId ? "Update Room" : "Create Room"}
                 </button>
@@ -286,7 +288,7 @@ export default function Rooms() {
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="bg-gray-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-600 transition-colors shadow-sm"
+                    className="bg-gray-200 text-gray-700 px-6 py-2 rounded-md font-medium hover:bg-gray-300 transition-colors"
                   >
                     Cancel
                   </button>
@@ -295,40 +297,40 @@ export default function Rooms() {
             </form>
           </div>
 
-        {Object.keys(groupedRooms).length === 0 ? (
-          <div className="text-center py-8">
-            <div className="text-5xl mb-3 opacity-50">🏨</div>
-            <h3 className="text-lg font-medium text-gray-600 mb-2">No Rooms Added</h3>
-            <p className="text-gray-500 text-sm">Add your first room using the form above</p>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {Object.entries(groupedRooms).map(([hotelName, hotelData]) => {
-              const isExpanded = expandedHotels.has(hotelData.hotel?.id);
-              return (
-                <div key={hotelName} className="space-y-4">
-                  {/* Hotel Header */}
-                  <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-2xl p-6 shadow-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-2xl font-bold">{hotelName}</h3>
-                        <p className="text-orange-100 text-sm mt-1">
-                          {hotelData.hotel?.location || 'Location not specified'}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="bg-white/20 px-4 py-2 rounded-full">
-                          <span className="text-lg font-semibold">
-                            {hotelData.rooms.length} {hotelData.rooms.length === 1 ? 'Room' : 'Rooms'}
-                          </span>
+          {/* Rooms Display */}
+          {Object.keys(groupedRooms).length === 0 ? (
+            <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
+              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MapPin className="w-8 h-8 text-orange-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Rooms Added</h3>
+              <p className="text-gray-600">Add your first room using the form above</p>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {Object.entries(groupedRooms).map(([hotelName, hotelData]) => {
+                const isExpanded = expandedHotels.has(hotelData.hotel?.id);
+                return (
+                  <div key={hotelName} className="space-y-4">
+                    {/* Hotel Header */}
+                    <div className="bg-white rounded-lg shadow-sm border p-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <MapPin className="w-5 h-5 text-orange-600" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900">{hotelName}</h3>
+                            <p className="text-sm text-gray-600">
+                              {hotelData.hotel?.location || 'Location not specified'}
+                            </p>
+                          </div>
                         </div>
                         <button
                           onClick={() => toggleHotelRooms(hotelData.hotel?.id)}
-                          className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-full transition-colors flex items-center gap-2"
+                          className="flex items-center gap-2 px-4 py-2 bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition-colors text-sm font-medium"
                         >
-                          <span className="font-medium">
-                            {isExpanded ? 'Hide Rooms' : 'Show Rooms'}
-                          </span>
+                          <span>{isExpanded ? 'Hide' : 'Show'} Rooms</span>
                           <svg 
                             className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                             fill="none" 
@@ -340,30 +342,29 @@ export default function Rooms() {
                         </button>
                       </div>
                     </div>
+                    
+                    {/* Room Cards - Collapsible */}
+                    {isExpanded && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {hotelData.rooms.map((room) => (
+                          <RoomCard
+                            key={room.id}
+                            room={{
+                              ...room,
+                              hotel_name: hotelName
+                            }}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                            isAdmin={true}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  
-                  {/* Room Cards Grid - Collapsible */}
-                  {isExpanded && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in">
-                      {hotelData.rooms.map((room) => (
-                        <RoomCard
-                          key={room.id}
-                          room={{
-                            ...room,
-                            hotel_name: hotelName
-                          }}
-                          onEdit={handleEdit}
-                          onDelete={handleDelete}
-                          isAdmin={true}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </AdminLayout>

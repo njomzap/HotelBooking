@@ -182,11 +182,26 @@ const RoomDetail = () => {
       setExtraRequest("");
     } catch (err) {
       console.error("AXIOS ERROR:", err);
-      setMessage(
-        err.response?.data?.message ||
-          err.response?.data?.error ||
-          "Booking failed. Please try again."
-      );
+      console.error("Error response:", err.response);
+      console.error("Error status:", err.response?.status);
+      console.error("Error data:", err.response?.data);
+      
+      let errorMessage = "Booking failed. Please try again.";
+      
+      if (err.response?.status === 401) {
+        errorMessage = "You must be logged in to book a room. Please log in and try again.";
+        // Clear invalid tokens
+        localStorage.removeItem("token");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("role");
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      }
+      
+      setMessage(errorMessage);
     } finally {
       setLoading(false);
     }
