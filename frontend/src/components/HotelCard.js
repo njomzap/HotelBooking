@@ -45,58 +45,16 @@ const HotelCard = ({ hotel, onEdit, onDelete, isAdmin = false, isUser = false })
 
       <div className="p-5 flex flex-col flex-grow">
         <div className="flex-grow">
-          <div className="flex items-start justify-between mb-2">
-            <h3 className="text-xl font-bold text-gray-800 flex-grow">
-              {hotel.hotel_name}
-            </h3>
-            {hotel.rating && (
-              <div className="flex items-center ml-2">
-                <span className="text-sm font-semibold text-gray-700 mr-1">
-                  {hotel.rating}
-                </span>
-                <div className="flex">
-                  {renderStars(hotel.rating)}
-                </div>
-              </div>
-            )}
-          </div>
+          <h3 className="text-xl font-bold text-gray-800 text-center mb-2">
+            {hotel.hotel_name}
+          </h3>
           
-          <div className="flex items-center text-gray-600 text-sm mb-2">
+          <div className="flex items-center justify-center text-gray-600 text-sm">
             <svg className="w-4 h-4 mr-1 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
             </svg>
             {hotel.city}, {hotel.address}
           </div>
-
-          {hotel.description && (
-            <p className="text-gray-600 text-sm line-clamp-2 mb-3">
-              {hotel.description}
-            </p>
-          )}
-
-          {hotel.amenities && hotel.amenities.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-3">
-              {hotel.amenities.slice(0, 3).map((amenity, index) => (
-                <span 
-                  key={index}
-                  className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full"
-                >
-                  {amenity}
-                </span>
-              ))}
-              {hotel.amenities.length > 3 && (
-                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                  +{hotel.amenities.length - 3} more
-                </span>
-              )}
-            </div>
-          )}
-
-          {hotel.reviews > 0 && (
-            <div className="text-xs text-gray-500 mb-3">
-              {hotel.reviews} {hotel.reviews === 1 ? 'review' : 'reviews'}
-            </div>
-          )}
         </div>
 
         <div className="border-t pt-3 mt-3">

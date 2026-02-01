@@ -166,15 +166,10 @@ const Catalogue = ({ user }) => {
                       hotel_name: hotel.hotel_name || hotel.name || "No name",
                       city: hotel.city || "Unknown",
                       address: hotel.address || "-",
-                      price_per_night: hotel.price_per_night || hotel.price || 100,
                       images:
                         hotel.images && hotel.images.length > 0
                           ? hotel.images
-                          : ["/default-hotel.jpg"],
-                      description: hotel.description || "",
-                      rating: hotel.rating || 4.5,
-                      reviews: hotel.reviews || 0,
-                      amenities: hotel.amenities || []
+                          : ["/default-hotel.jpg"]
                     }}
                     isAdmin={user?.role === "admin"} 
                     isUser={user?.role === "user"} 
