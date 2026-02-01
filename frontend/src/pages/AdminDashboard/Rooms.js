@@ -109,10 +109,22 @@ export default function Rooms() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this room?")) return;
+  if (!window.confirm("Delete this room?")) return;
+
+  try {
     await api.delete(`${API_URL}/${id}`);
     fetchRooms();
-  };
+  } catch (err) {
+    console.error(err);
+
+
+    const message =
+      err.response?.data?.error ||
+      "Failed to delete room. Please try again.";
+    alert(message);
+  }
+};
+
 
   const toggleHotelRooms = (hotelId) => {
     const newExpanded = new Set(expandedHotels);

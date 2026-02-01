@@ -249,6 +249,18 @@ const deleteRoom = async (req, res) => {
       return res.status(403).json({ error: "You can only delete rooms for your assigned hotel" });
     }
 
+    const [bookings] = await pool.query(
+      "SELECT * FROM bookings WHERE room_id = ? AND status != 'cancelled'",
+      [id]
+    );
+
+    if (bookings.length > 0) {
+      console.log('❌ Room has active bookings');
+      return res.status(400).json({
+        error: "Cannot delete room: there are active bookings"
+      });
+    }
+
     console.log('📸 Fetching images for room:', id);
     const [images] = await pool.query(
       "SELECT image_url FROM room_images WHERE room_id = ?",
@@ -257,9 +269,12 @@ const deleteRoom = async (req, res) => {
 
     console.log('📁 Found images:', images.length);
     
-    // Temporarily skip file deletion to test database operations
-    console.log('⚠️ Skipping file deletion for debugging');
     
+    images.forEach(img => {
+      const filePath = path.join(__dirname, "..", img.image_url);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    });
+
     console.log('🗑️ Deleting room images from database');
     await pool.query("DELETE FROM room_images WHERE room_id = ?", [id]);
 
@@ -279,6 +294,7 @@ const deleteRoom = async (req, res) => {
     res.status(500).json({ error: "Server error", details: error.message });
   }
 };
+
 
 module.exports = {
   getAllRooms,

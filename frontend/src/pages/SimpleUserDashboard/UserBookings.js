@@ -114,7 +114,7 @@ const UserBookings = () => {
     
     try {
       setAddingRequest(bookingId);
-      await api.post("/extraRequests", {
+      await api.post("/extra-Requests", {
         booking_id: bookingId,
         request_text: newRequest.trim()
       });
@@ -131,7 +131,7 @@ const UserBookings = () => {
     if (!window.confirm("Delete this request?")) return;
     
     try {
-      await api.delete(`/extraRequests/${requestId}`);
+      await api.delete(`/extra-Requests/${requestId}`);
       await fetchBookings();
     } catch (err) {
       alert("Failed to delete request");

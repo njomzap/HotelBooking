@@ -442,36 +442,36 @@ exports.deleteBooking = async (req, res) => {
   }
 };
 
-// New function to actually delete a booking from database
 exports.hardDeleteBooking = async (req, res) => {
   try {
     const bookingId = req.params.id;
-    const userId = req.user.id;
 
-    const [bookings] = await db.query(
-      "SELECT * FROM bookings WHERE id = ? AND user_id = ?",
-      [bookingId, userId]
+    // Always attempt cleanup first (safe even if nothing exists)
+    await db.query("DELETE FROM extra_requests WHERE booking_id = ?", [bookingId]);
+    await db.query("DELETE FROM payments WHERE booking_id = ?", [bookingId]);
+
+    // Delete booking itself
+    const [result] = await db.query(
+      "DELETE FROM bookings WHERE id = ?",
+      [bookingId]
     );
 
-    if (bookings.length === 0) {
-      return res.status(404).json({ message: "Booking not found or not yours" });
+    // Idempotent response (no false 404s)
+    if (result.affectedRows === 0) {
+      return res.json({
+        message: "Booking already deleted"
+      });
     }
 
-    // Delete related extra requests first
-    await db.query("DELETE FROM extra_requests WHERE booking_id = ?", [bookingId]);
-    
-    // Delete related payments
-    await db.query("DELETE FROM payments WHERE booking_id = ?", [bookingId]);
-    
-    // Delete the booking
-    await db.query("DELETE FROM bookings WHERE id = ?", [bookingId]);
-
-    res.json({ message: "Booking deleted permanently" });
+    res.json({
+      message: "Booking deleted permanently"
+    });
   } catch (err) {
-    console.error("DELETE BOOKING ERROR:", err);
+    console.error("HARD DELETE BOOKING ERROR:", err);
     res.status(500).json({ message: "Failed to delete booking" });
   }
 };
+
 
 
 exports.confirmBookingByEmployee = async (req, res) => {

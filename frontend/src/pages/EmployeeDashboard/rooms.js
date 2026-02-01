@@ -175,14 +175,21 @@ const Rooms = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this room?")) return;
-    try {
-      await api.delete(`${API_URL}/${id}`);
-      fetchRooms();
-    } catch {
-      alert("Delete failed");
-    }
-  };
+  if (!window.confirm("Delete this room?")) return;
+
+  try {
+    await api.delete(`${API_URL}/${id}`);
+    fetchRooms();
+  } catch (err) {
+    console.error(err);
+
+    const message =
+      err.response?.data?.error ||
+      "Failed to delete room. It may have active bookings.";
+    alert(message);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 p-6">
