@@ -130,6 +130,8 @@ const HotelDetails = () => {
       <p className="p-6 text-center text-red-500 font-medium">Hotel not found</p>
     );
 
+  const hasAmenities = hotel.has_pool === 1 || hotel.has_gym === 1 || hotel.parking === 1 || hotel.wifi === 1;
+
   return (
     <div className="w-full">
    
@@ -159,123 +161,42 @@ const HotelDetails = () => {
             <h1 className="text-5xl md:text-6xl font-bold mb-4">
               {hotel.name || hotel.hotel_name}
             </h1>
+
+            {hasAmenities && (
+              <div className="flex flex-wrap justify-center gap-3">
+                {hotel.has_pool === 1 && (
+                  <span className="inline-flex items-center gap-2 bg-white/15 text-white px-4 py-2 rounded-full text-sm font-medium">
+                    <Waves className="w-4 h-4" />
+                    Swimming Pool
+                  </span>
+                )}
+                {hotel.has_gym === 1 && (
+                  <span className="inline-flex items-center gap-2 bg-white/15 text-white px-4 py-2 rounded-full text-sm font-medium">
+                    <Dumbbell className="w-4 h-4" />
+                    Fitness Center
+                  </span>
+                )}
+                {hotel.parking === 1 && (
+                  <span className="inline-flex items-center gap-2 bg-white/15 text-white px-4 py-2 rounded-full text-sm font-medium">
+                    <Car className="w-4 h-4" />
+                    Free Parking
+                  </span>
+                )}
+                {hotel.wifi === 1 && (
+                  <span className="inline-flex items-center gap-2 bg-white/15 text-white px-4 py-2 rounded-full text-sm font-medium">
+                    <Wifi className="w-4 h-4" />
+                    WiFi
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       <div className="bg-gray-50 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          
-          <div className="bg-white rounded-3xl shadow-xl p-8 mb-12 border border-orange-100">
-            <div className="grid md:grid-cols-2 gap-8">
-              
-              <div className="bg-gradient-to-br from-orange-50 to-white rounded-2xl p-6 border border-orange-100">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
-                    <MapPin className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900">Location & Contact</h3>
-                </div>
-                <div className="space-y-3">
-                  <p className="text-gray-700">
-                    <span className="font-semibold">Address:</span> {hotel.address}
-                  </p>
-                  <p className="text-gray-700">
-                    <span className="font-semibold">City:</span> {hotel.city}
-                  </p>
-                  {hotel.phone && (
-                    <p className="text-gray-700">
-                      <span className="font-semibold">Phone:</span> {hotel.phone}
-                    </p>
-                  )}
-                  {hotel.email && (
-                    <p className="text-gray-700">
-                      <span className="font-semibold">Email:</span> {hotel.email}
-                    </p>
-                  )}
-                  {hotel.country && (
-                    <p className="text-gray-700">
-                      <span className="font-semibold">Country:</span> {hotel.country}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              
-              {/* Show amenities section only if hotel has at least one amenity */}
-              {(hotel.has_pool === 1 || 
-                hotel.has_gym === 1 || 
-                hotel.parking === 1 ||
-                hotel.wifi === 1) && (
-                <div className="bg-gradient-to-br from-blue-50 to-white rounded-2xl p-6 border border-blue-100">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
-                      <Wifi className="w-6 h-6 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900">Amenities</h3>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    {hotel.has_pool === 1 && (
-                      <span className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium">
-                        <Waves className="w-4 h-4" />
-                        Swimming Pool
-                      </span>
-                    )}
-                    {hotel.has_gym === 1 && (
-                      <span className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium">
-                        <Dumbbell className="w-4 h-4" />
-                        Fitness Center
-                      </span>
-                    )}
-                    {hotel.parking === 1 && (
-                      <span className="inline-flex items-center gap-2 bg-purple-100 text-purple-700 px-4 py-2 rounded-full text-sm font-medium">
-                        <Car className="w-4 h-4" />
-                        Free Parking
-                      </span>
-                    )}
-                    {hotel.wifi === 1 && (
-                      <span className="inline-flex items-center gap-2 bg-orange-100 text-orange-700 px-4 py-2 rounded-full text-sm font-medium">
-                        <Wifi className="w-4 h-4" />
-                        WiFi
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-           
-            <div className="mt-4">
-              <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 border border-gray-200">
-                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-orange-500" />
-                  Hotel Location
-                </h3>
-                <HotelMapLeaflet address={hotel.address} city={hotel.city} />
-              </div>
-            </div>
-          </div>
-
-          {/* Reviews Section - Only show for logged-in users */}
-          {isLoggedIn && (
-            <div className="mb-12">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
-                <Star className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900">Guest Reviews</h2>
-                <p className="text-gray-600">See what our guests are saying</p>
-              </div>
-            </div>
-            <div className="bg-white rounded-3xl shadow-xl p-8 border border-orange-100">
-              <ReviewsList hotelId={id} />
-            </div>
-          </div>
-          )}
-
-          <div className="mb-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <section>
             <div className="flex items-center gap-3 mb-8">
               <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
                 <Bed className="w-6 h-6 text-white" />
@@ -302,8 +223,47 @@ const HotelDetails = () => {
                 ))}
               </div>
             )}
-          </div>
+          </section>
 
+          {isLoggedIn && (
+            <section>
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
+                  <Star className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold text-gray-900">Guest Reviews</h2>
+                  <p className="text-gray-600">See what our guests are saying</p>
+                </div>
+              </div>
+              <div className="bg-white rounded-3xl shadow-xl p-8 border border-orange-100">
+                <ReviewsList hotelId={id} />
+              </div>
+            </section>
+          )}
+
+          <section>
+            <div className="bg-gradient-to-br from-orange-50 to-white rounded-3xl p-8 border border-orange-100 shadow">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
+                  <MapPin className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900">Location & Contact</h3>
+              </div>
+              <div className="grid lg:grid-cols-2 gap-8">
+                <div className="space-y-3 text-gray-700">
+                  <p><span className="font-semibold">Address:</span> {hotel.address}</p>
+                  <p><span className="font-semibold">City:</span> {hotel.city}</p>
+                  {hotel.country && <p><span className="font-semibold">Country:</span> {hotel.country}</p>}
+                  {hotel.phone && <p><span className="font-semibold">Phone:</span> {hotel.phone}</p>}
+                  {hotel.email && <p><span className="font-semibold">Email:</span> {hotel.email}</p>}
+                </div>
+                <div className="bg-white rounded-2xl border border-orange-100 p-4">
+                  <HotelMapLeaflet address={hotel.address} city={hotel.city} />
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
 

@@ -1,31 +1,77 @@
-import * as React from 'react';
-import { useEffect, useState } from 'react';
+import * as React from "react";
+import { useEffect, useMemo, useState } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 const defaultPosition = [41.3275, 19.8187];
 
+const markerIcon = new L.Icon({
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
 const HotelMapLeaflet = ({ address, city }) => {
-  const [loading, setLoading] = useState(true);
   const [isClient, setIsClient] = useState(false);
+  const [position, setPosition] = useState(defaultPosition);
+  const [loading, setLoading] = useState(true);
+
+  const query = useMemo(() => {
+    const parts = [address, city].filter(Boolean);
+    return parts.length ? parts.join(", ") : "";
+  }, [address, city]);
 
   useEffect(() => {
-    setIsClient(typeof window !== 'undefined');
-    setLoading(false);
+    setIsClient(typeof window !== "undefined");
   }, []);
 
+  useEffect(() => {
+    const fetchCoordinates = async () => {
+      if (!query) {
+        setPosition(defaultPosition);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`,
+          {
+            headers: {
+              "Accept-Language": "en",
+              "User-Agent": "HotelBookingApp/1.0",
+            },
+          }
+        );
+        const data = await res.json();
+        if (data?.length) {
+          setPosition([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+        } else {
+          setPosition(defaultPosition);
+        }
+      } catch (err) {
+        console.error("Failed to geocode hotel address", err);
+        setPosition(defaultPosition);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCoordinates();
+  }, [query]);
+
   const openInMaps = () => {
-    const query = encodeURIComponent(`${address || ''}, ${city || ''}`);
-    const url = `https://www.openstreetmap.org/search?query=${query}`;
-    window.open(url, '_blank');
+    const encoded = encodeURIComponent(query || "Hotel location");
+    window.open(`https://www.openstreetmap.org/search?query=${encoded}`);
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-center h-96 bg-gray-100 rounded-2xl">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
-        </div>
-      </div>
-    );
+  if (!isClient) {
+    return null;
   }
 
   return (
@@ -42,35 +88,30 @@ const HotelMapLeaflet = ({ address, city }) => {
           Open in Maps
         </button>
       </div>
-      
-      <div className="rounded-2xl shadow-lg border border-orange-100 overflow-hidden" style={{ height: '300px' }}>
-        <div className="relative h-full bg-gray-100">
-          {/* Static Map Fallback */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <p className="text-gray-700 font-medium mb-2">Hotel Location</p>
-              <p className="text-sm text-gray-600 mb-4">{address || 'Address not available'}</p>
-              <button
-                onClick={openInMaps}
-                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium flex items-center gap-2 mx-auto"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-                Open in Maps
-              </button>
-            </div>
+
+      <div className="rounded-2xl shadow-lg border border-orange-100 overflow-hidden" style={{ height: "300px" }}>
+        {loading ? (
+          <div className="flex items-center justify-center h-full bg-gray-100">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-600"></div>
           </div>
-        </div>
+        ) : (
+          <MapContainer center={position} zoom={14} style={{ height: "100%", width: "100%" }} scrollWheelZoom={false}>
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            <Marker position={position} icon={markerIcon}>
+              <Popup>
+                {hotelPopupText(query)}
+              </Popup>
+            </Marker>
+          </MapContainer>
+        )}
       </div>
     </div>
   );
 };
+
+const hotelPopupText = (query) => (query ? query : "Hotel location");
 
 export default HotelMapLeaflet;
