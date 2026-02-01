@@ -248,13 +248,19 @@ const UserBookings = () => {
                             {roomName}
                           </p>
                         </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(status)}`}>
-                            {status}
-                          </span>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getPaymentStatusColor(paymentStatus)}`}>
-                            {paymentStatus}
-                          </span>
+                        <div className="flex flex-col items-end gap-2 text-right">
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Booking status :</p>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(status)}`}>
+                              {status}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Payment status :</p>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getPaymentStatusColor(paymentStatus)}`}>
+                              {paymentStatus}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
