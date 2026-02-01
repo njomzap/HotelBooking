@@ -34,6 +34,7 @@ import EmployeeProfile from "./pages/EmployeeDashboard/profile";
 import EmployeeLostFound from "./pages/EmployeeDashboard/LostFound";
 import EmployeePromoCodes from "./pages/EmployeeDashboard/PromoCodes";
 import EmployeeDashboard from "./pages/EmployeeDashboard/index";
+import EmployeePayments from "./pages/EmployeeDashboard/Payments";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -167,6 +168,7 @@ export default function App() {
               <Route index element={<EmployeeDashboard />} />  {/* default dashboard */}
               <Route path="rooms" element={<EmployeeRooms />} />
               <Route path="bookings" element={<EmployeeBookings />} />
+              <Route path="payments" element={<EmployeePayments />} />
               <Route path="lostfound" element={<EmployeeLostFound />} />
               <Route path="promos" element={<EmployeePromoCodes />} />
               <Route path="profile" element={<EmployeeProfile />} />

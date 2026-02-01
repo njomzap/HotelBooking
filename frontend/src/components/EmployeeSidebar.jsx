@@ -33,6 +33,13 @@ export default function EmployeeSidebar() {
       </NavLink>
 
       <NavLink
+        to="/employee-dashboard/payments"
+        className={({ isActive }) => (isActive ? activeClasses : baseClasses)}
+      >
+        Payments
+      </NavLink>
+
+      <NavLink
         to="/employee-dashboard/lostfound"
         className={({ isActive }) => (isActive ? activeClasses : baseClasses)}
       >
