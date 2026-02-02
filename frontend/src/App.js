@@ -87,7 +87,7 @@ export default function App() {
             <Route path="/rooms/:id" element={<RoomDetail />} />
 
             {/* ADMIN */}
-            <Route
+            <Route 
               path="/admin-dashboard"
               element={
                 <ProtectedRoute allowedRoles={["admin"]}>

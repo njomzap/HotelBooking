@@ -7,14 +7,15 @@ import RoomCard from "../components/RoomCard";
 import ReviewsList from "../components/reviewsList";
 import HotelMapLeaflet from "../components/HotelMapLeaflet";
 
-const isLoggedIn = true;
-
 const HotelDetails = () => {
   const { id } = useParams();
   const [hotel, setHotel] = useState(null);
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [roomsLoading, setRoomsLoading] = useState(true);
+
+  // Check if user is logged in
+  const isLoggedIn = localStorage.getItem("token") !== null;
 
   
   const [showLostFoundModal, setShowLostFoundModal] = useState(false);
@@ -267,18 +268,20 @@ const HotelDetails = () => {
         </div>
       </div>
 
-      <div className="fixed bottom-8 right-8 z-50">
-        <button
-          onClick={() => {
-            setShowLostFoundModal(true);
-            refreshLostItems(); // Refresh items when modal opens
-          }}
-          className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-4 rounded-full shadow-2xl hover:from-orange-600 hover:to-orange-700 transition-all transform hover:scale-110 flex items-center gap-3 font-medium"
-        >
-          <Package className="w-6 h-6" />
-          Lost & Found
-        </button>
-      </div>
+      {/* Lost & Found Button - Only show for logged-in users */}
+      {isLoggedIn && (
+        <div className="fixed bottom-8 right-8 z-50">
+          <button
+            onClick={() => {
+              setShowLostFoundModal(true);
+            }}
+            className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-4 rounded-full shadow-2xl hover:from-orange-600 hover:to-orange-700 transition-all transform hover:scale-110 flex items-center gap-3 font-medium"
+          >
+            <Package className="w-6 h-6" />
+            Lost & Found
+          </button>
+        </div>
+      )}
 
       
       {showLostFoundModal && (
@@ -315,119 +318,73 @@ const HotelDetails = () => {
 
             
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-              {lfLoading ? (
-                <div className="flex justify-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
-                </div>
-              ) : (
-                <>
-                 
-                  <div className="mb-8">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-4">Recent Lost Items</h3>
-                    {lostItems.length === 0 ? (
-                      <div className="bg-gray-50 rounded-2xl p-8 text-center">
-                        <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-500">No lost items reported yet</p>
-                      </div>
-                    ) : (
-                      <div className="grid gap-4">
-                        {lostItems.map((item) => (
-                          <div key={item.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <h4 className="font-semibold text-gray-900">{item.item_name}</h4>
-                                <p className="text-gray-600 text-sm mt-1">{item.description}</p>
-                                <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                                  <span>📍 {item.location}</span>
-                                  <span>📅 {item.date_found}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+              {/* Only show the form to report lost items - no recent items list */}
+              <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 border border-orange-200">
+                <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                  <Package className="w-5 h-5 text-orange-600" />
+                  Report a Lost Item
+                </h3>
+                <form onSubmit={handleAddItem} className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Item Name</label>
+                      <input
+                        type="text"
+                        name="item_name"
+                        placeholder="e.g., Wallet, Phone, Keys"
+                        value={newItem.item_name}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white shadow-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Date Found</label>
+                      <input
+                        type="date"
+                        name="date_found"
+                        value={newItem.date_found}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white shadow-sm"
+                      />
+                    </div>
                   </div>
-
-                 
-                  {isLoggedIn && (
-                    <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 border border-orange-200">
-                      <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                        <Package className="w-5 h-5 text-orange-600" />
-                        Report a Lost Item
-                      </h3>
-                      <form onSubmit={handleAddItem} className="space-y-4">
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Item Name</label>
-                            <input
-                              type="text"
-                              name="item_name"
-                              placeholder="e.g., Wallet, Phone, Keys"
-                              value={newItem.item_name}
-                              onChange={handleInputChange}
-                              required
-                              className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white shadow-sm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Date Found</label>
-                            <input
-                              type="date"
-                              name="date_found"
-                              value={newItem.date_found}
-                              onChange={handleInputChange}
-                              required
-                              className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white shadow-sm"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                          <textarea
-                            name="description"
-                            placeholder="Provide a detailed description of the item..."
-                            value={newItem.description}
-                            onChange={handleInputChange}
-                            required
-                            rows={3}
-                            className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white shadow-sm resize-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Location Found</label>
-                          <input
-                            type="text"
-                            name="location"
-                            placeholder="e.g., Lobby, Room 205, Pool Area"
-                            value={newItem.location}
-                            onChange={handleInputChange}
-                            required
-                            className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white shadow-sm"
-                          />
-                        </div>
-                        <div className="flex justify-end">
-                          <button
-                            type="submit"
-                            className="bg-gradient-to-r from-orange-600 to-orange-700 text-white px-6 py-3 rounded-xl hover:from-orange-700 hover:to-orange-800 transition-all transform hover:scale-105 shadow-lg font-medium flex items-center gap-2"
-                          >
-                            <Package className="w-5 h-5" />
-                            Submit Report
-                          </button>
-                        </div>
-                      </form>
-                    </div>
-                  )}
-
-                  {!isLoggedIn && (
-                    <div className="bg-white rounded-2xl p-8 text-center border border-orange-100">
-                      <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500 text-lg font-medium mb-2">Login to Report Lost Items</p>
-                      <p className="text-gray-400">Please sign in to access the lost & found service.</p>
-                    </div>
-                  )}
-                </>
-              )}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea
+                      name="description"
+                      placeholder="Provide a detailed description of the item..."
+                      value={newItem.description}
+                      onChange={handleInputChange}
+                      required
+                      rows={3}
+                      className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white shadow-sm resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Location Found</label>
+                    <input
+                      type="text"
+                      name="location"
+                      placeholder="e.g., Lobby, Room 205, Pool Area"
+                      value={newItem.location}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all bg-white shadow-sm"
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      className="bg-gradient-to-r from-orange-600 to-orange-700 text-white px-6 py-3 rounded-xl hover:from-orange-700 hover:to-orange-800 transition-all transform hover:scale-105 shadow-lg font-medium flex items-center gap-2"
+                    >
+                      <Package className="w-5 h-5" />
+                      Submit Report
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         </div>

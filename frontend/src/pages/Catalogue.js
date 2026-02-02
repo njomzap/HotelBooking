@@ -27,11 +27,15 @@ const Catalogue = ({ user }) => {
 
     const fetchHotels = async () => {
       try {
+        console.log("Fetching hotels from API...");
         const res = await axios.get("http://localhost:5000/api/hotels");
+        console.log("API Response:", res.data);
         const hotelsData = Array.isArray(res.data) ? res.data : res.data.hotels;
+        console.log("Hotels data:", hotelsData);
         setHotels(hotelsData || []);
       } catch (error) {
         console.error("Error fetching hotels:", error);
+        console.error("Error details:", error.response);
         setHotels([]);
       } finally {
         setLoading(false);
@@ -49,6 +53,11 @@ const Catalogue = ({ user }) => {
     const matchesCity = !selectedCity || hotel.city === selectedCity;
     return matchesSearch && matchesCity;
   });
+
+  console.log("Total hotels:", hotels.length);
+  console.log("Filtered hotels:", filteredHotels.length);
+  console.log("Search term:", searchTerm);
+  console.log("Selected city:", selectedCity);
 
   const cities = [...new Set(hotels.map(hotel => hotel.city).filter(Boolean))];
 
