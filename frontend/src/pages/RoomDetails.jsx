@@ -327,9 +327,16 @@ const applyPromoCode = async () => {
   setPromoFeedback("");
 
   try {
+    const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
+    
     const response = await axios.post(`${API_URL}/${room.id}/evaluate-promo`, {
       promo_code: promoCode.trim(),
+      room_id: room.id,
       subtotal: room.price * (modalCheckIn && modalCheckOut ? Math.ceil((new Date(modalCheckOut) - new Date(modalCheckIn)) / (1000 * 60 * 60 * 24)) : 1)
+    }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     const promo = response.data;

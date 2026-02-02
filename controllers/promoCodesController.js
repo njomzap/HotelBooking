@@ -369,7 +369,10 @@ const toDateString = (value) => {
 
 exports.applyPromoCode = async (req, res) => {
   try {
-    const { code, subtotal, room_id, hotel_id } = req.body;
+    // Handle both parameter names for compatibility
+    const code = req.body.code || req.body.promo_code;
+    const { subtotal, room_id, hotel_id } = req.body;
+    
     if (!code) {
       return res.status(400).json({ message: "Promo code is required" });
     }
@@ -417,6 +420,6 @@ exports.applyPromoCode = async (req, res) => {
     });
   } catch (err) {
     console.error("APPLY PROMO CODE ERROR:", err);
-    res.status(500).json({ message: "Failed to apply promo code" });
+    res.status(500).json({ message: "Server error" });
   }
 };
