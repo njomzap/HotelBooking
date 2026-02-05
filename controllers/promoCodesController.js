@@ -405,10 +405,7 @@ exports.applyPromoCode = async (req, res) => {
       return res.status(400).json({ message: "Promo code is disabled" });
     }
 
-    if (
-      promo.usage_limit !== null &&
-      promo.usage_count >= promo.usage_limit
-    ) {
+    if (promo.usage_limit !== null && promo.usage_count >= promo.usage_limit) {
       return res.status(400).json({ message: "Promo code usage limit reached" });
     }
 
@@ -416,7 +413,7 @@ exports.applyPromoCode = async (req, res) => {
 
     res.json({
       promo,
-      discount_amount,
+      discount_amount
     });
   } catch (err) {
     console.error("APPLY PROMO CODE ERROR:", err);

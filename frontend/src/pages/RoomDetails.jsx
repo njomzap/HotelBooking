@@ -121,14 +121,46 @@ const RoomDetail = () => {
       return;
     }
 
-    const token = authService.getToken();
-    if (!token) {
-      setPromoFeedback("You must be logged in to apply a promo code.");
+    const applyCheckIn = modalCheckIn || checkIn;
+    const applyCheckOut = modalCheckOut || checkOut;
+
+    if (!applyCheckIn || !applyCheckOut) {
+      setPromoFeedback("Select check-in and check-out dates before applying a code.");
       return;
     }
 
-    if (subtotal <= 0) {
-      setPromoFeedback("Select valid check-in and check-out dates before applying a code.");
+    const checkInDate = new Date(applyCheckIn);
+    const checkOutDate = new Date(applyCheckOut);
+
+    if (Number.isNaN(checkInDate.getTime()) || Number.isNaN(checkOutDate.getTime())) {
+      setPromoFeedback("Invalid date selection.");
+      return;
+    }
+
+    if (checkOutDate <= checkInDate) {
+      setPromoFeedback("Check-out date must be after check-in date.");
+      return;
+    }
+
+    const nightsSelected = Math.ceil(
+      (checkOutDate - checkInDate) / (1000 * 60 * 60 * 24)
+    );
+
+    if (nightsSelected <= 0) {
+      setPromoFeedback("Select valid stay dates before applying a code.");
+      return;
+    }
+
+    const promoSubtotal = (room?.price || 0) * nightsSelected;
+
+    if (promoSubtotal <= 0) {
+      setPromoFeedback("Subtotal must be greater than zero to apply a promo code.");
+      return;
+    }
+
+    const token = authService.getToken();
+    if (!token) {
+      setPromoFeedback("You must be logged in to apply a promo code.");
       return;
     }
 
@@ -138,7 +170,7 @@ const RoomDetail = () => {
         "http://localhost:5000/api/promo-codes/apply",
         {
           code: promoCode.trim(),
-          subtotal,
+          subtotal: promoSubtotal,
           room_id: room?.id,
           hotel_id: room?.hotel_id,
         },
@@ -149,11 +181,16 @@ const RoomDetail = () => {
         }
       );
 
+      const { promo, discount_amount } = res.data;
       setAppliedPromo({
         code: promoCode.trim(),
-        discountAmount: res.data.discount_amount,
+        discountAmount: discount_amount,
+        label:
+          promo?.discount_type === "percentage"
+            ? `${promo.discount_value}%`
+            : `$${Number(promo.discount_value).toFixed(2)}`,
       });
-      setPromoFeedback(`Promo applied! You save $${res.data.discount_amount.toFixed(2)}.`);
+      setPromoFeedback(`Promo applied! You save $${discount_amount.toFixed(2)}.`);
     } catch (err) {
       console.error("APPLY PROMO ERROR:", err);
       setAppliedPromo(null);
@@ -316,40 +353,6 @@ const RoomDetail = () => {
       setModalLoading(false);
     }
   };
-
-const applyPromoCode = async () => {
-  if (!promoCode.trim()) {
-    setPromoFeedback("Please enter a promo code");
-    return;
-  }
-
-  setApplyingPromo(true);
-  setPromoFeedback("");
-
-  try {
-    const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
-    
-    const response = await axios.post(`${API_URL}/${room.id}/evaluate-promo`, {
-      promo_code: promoCode.trim(),
-      room_id: room.id,
-      subtotal: room.price * (modalCheckIn && modalCheckOut ? Math.ceil((new Date(modalCheckOut) - new Date(modalCheckIn)) / (1000 * 60 * 60 * 24)) : 1)
-    }, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const promo = response.data;
-    setAppliedPromo(promo);
-    setPromoFeedback(`Promo code applied! You saved ${promo.discount}%`);
-  } catch (error) {
-    console.error("Promo error:", error);
-    setPromoFeedback(error.response?.data?.message || "Invalid promo code");
-    setAppliedPromo(null);
-  } finally {
-    setApplyingPromo(false);
-  }
-};
 
 const openBookingModal = () => {
   if (!authService.isLoggedIn()) {
@@ -581,8 +584,9 @@ return (
                 <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-gray-700 font-medium mb-2">Check-in</label>
+                      <label htmlFor="booking-check-in" className="block text-gray-700 font-medium mb-2">Check-in</label>
                       <input
+                        id="booking-check-in"
                         type="date"
                         value={modalCheckIn}
                         onChange={(e) => setModalCheckIn(e.target.value)}
@@ -591,8 +595,9 @@ return (
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-700 font-medium mb-2">Check-out</label>
+                      <label htmlFor="booking-check-out" className="block text-gray-700 font-medium mb-2">Check-out</label>
                       <input
+                        id="booking-check-out"
                         type="date"
                         value={modalCheckOut}
                         onChange={(e) => setModalCheckOut(e.target.value)}
@@ -615,9 +620,10 @@ return (
 
                   {/* Promo Code Section */}
                   <div>
-                    <label className="block text-gray-700 font-medium mb-2">Promo Code</label>
+                    <label htmlFor="booking-promo-code" className="block text-gray-700 font-medium mb-2">Promo Code</label>
                     <div className="flex gap-2">
                       <input
+                        id="booking-promo-code"
                         type="text"
                         value={promoCode}
                         onChange={(e) => setPromoCode(e.target.value)}
@@ -625,7 +631,7 @@ return (
                         className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       />
                       <button
-                        onClick={applyPromoCode}
+                        onClick={handleApplyPromo}
                         disabled={applyingPromo || !promoCode.trim()}
                         className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold disabled:opacity-50"
                       >
@@ -648,7 +654,7 @@ return (
                       </div>
                       {appliedPromo && (
                         <div className="flex justify-between text-green-600">
-                          <span>Discount ({appliedPromo.discount}%)</span>
+                          <span>Discount ({appliedPromo.label || appliedPromo.code})</span>
                           <span>-${(appliedPromo.discountAmount || 0).toFixed(2)}</span>
                         </div>
                       )}

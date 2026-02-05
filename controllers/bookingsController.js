@@ -8,6 +8,7 @@ const normalizePromoRow = (row) => ({
   end_date: row.end_date,
   usage_limit: row.usage_limit,
   usage_count: row.usage_count,
+  usage_pending: row.usage_pending || 0,
   active: Boolean(row.active),
 });
 
@@ -17,6 +18,28 @@ const computePromoDiscount = (promo, subtotal) => {
     return Number(((promo.discount_value / 100) * subtotal).toFixed(2));
   }
   return Math.min(subtotal, Number(promo.discount_value));
+};
+
+const hasUsageCapacity = (promo) =>
+  promo.usage_limit === null ||
+  (promo.usage_count + (promo.usage_pending || 0)) < promo.usage_limit;
+
+const finalizePromoUsage = async (promoId) => {
+  const [result] = await db.query(
+    `UPDATE promo_codes
+     SET
+       usage_pending = CASE WHEN usage_pending > 0 THEN usage_pending - 1 ELSE usage_pending END,
+       usage_count = usage_count + 1
+     WHERE id = ?
+       AND (
+         usage_pending > 0
+         OR usage_limit IS NULL
+         OR usage_count < usage_limit
+       )`,
+    [promoId]
+  );
+
+  return result.affectedRows > 0;
 };
 
 const toDateString = (value) => {
@@ -82,7 +105,7 @@ const evaluatePromoCode = async (code, subtotal, roomHotelId) => {
     throw new Error("Promo code is disabled");
   }
 
-  if (promo.usage_limit !== null && promo.usage_count >= promo.usage_limit) {
+  if (!hasUsageCapacity(promo)) {
     throw new Error("Promo code usage limit reached");
   }
 
@@ -238,10 +261,10 @@ exports.createBooking = async (req, res) => {
     );
 
     if (appliedPromoId) {
-      await db.query(
-        "UPDATE promo_codes SET usage_count = usage_count + 1 WHERE id = ?",
-        [appliedPromoId]
-      );
+      const finalized = await finalizePromoUsage(appliedPromoId);
+      if (!finalized) {
+        console.warn("Failed to finalize promo usage for promo", appliedPromoId);
+      }
     }
 
     res.status(201).json({
